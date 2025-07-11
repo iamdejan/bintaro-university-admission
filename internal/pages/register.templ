@@ -531,11 +531,6 @@ templ Register() {
 					e.preventDefault();
 
 					if (validateForm()) {
-						const btn = document.querySelector(".register-btn");
-						btn.textContent = "Creating Account...";
-						btn.disabled = true;
-
-						alert("Account created successfully! (This is a demo)");
 						registerForm.submit();
 					}
 				});

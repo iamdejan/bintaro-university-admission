@@ -4,7 +4,7 @@ vendor:
 
 .PHONY: fmt
 fmt:
-	templ fmt . && templ generate
+	go fmt ./... && templ fmt . && templ generate
 
 .PHONY: start
 start: fmt

@@ -31,6 +31,13 @@ func main() {
 		password VARCHAR(255)
 	);
 
+	CREATE TABLE IF NOT EXISTS sessions (
+		id UUID PRIMARY KEY,
+		user_id UUID,
+		session_token VARCHAR(255),
+		expires_at TIMESTAMPTZ
+	);
+
 	CREATE TABLE IF NOT EXISTS multi_factor_auth (
 		id UUID PRIMARY KEY,
 		slug varchar(255) UNIQUE,
