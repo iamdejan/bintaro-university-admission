@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"time"
@@ -10,9 +11,38 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
+	// database setup
+	db, err := sql.Open("sqlite3", "./database.db")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	sqlStmt := `
+	CREATE TABLE IF NOT EXISTS users (
+		id UUID PRIMARY KEY,
+		email VARCHAR(255),
+		password VARCHAR(255),
+		nationality CHAR(3)
+	);
+
+	CREATE TABLE IF NOT EXISTS multi_factor_auth (
+		id UUID PRIMARY KEY,
+		slug varchar(255) UNIQUE,
+		user_id UUID,
+		secret_base32 CHAR(26)
+	);
+	`
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		panic(err)
+	}
+
+	// router setup
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
