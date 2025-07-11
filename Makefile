@@ -8,4 +8,4 @@ fmt:
 
 .PHONY: start
 start: fmt
-	go run ./...
+	go run main.go

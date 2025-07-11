@@ -7,12 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	"bintaro-university-admission/router"
+	"bintaro-university-admission/internal/router"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-//nolint:funlen
 func main() {
 	ctx := context.Background()
 
@@ -28,7 +27,7 @@ func main() {
 		id UUID PRIMARY KEY,
 		full_name VARCHAR(255),
 		nationality CHAR(3),
-		email VARCHAR(255),
+		email VARCHAR(255) UNIQUE,
 		password VARCHAR(255)
 	);
 
