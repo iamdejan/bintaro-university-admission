@@ -17,6 +17,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+//nolint:funlen
 func main() {
 	ctx := context.Background()
 
@@ -27,25 +28,27 @@ func main() {
 	}
 	defer db.Close()
 
-	sqlStmt := `
-	CREATE TABLE IF NOT EXISTS users (
-		id UUID PRIMARY KEY,
-		full_name VARCHAR(255),
-		nationality CHAR(3),
-		email VARCHAR(255),
-		password VARCHAR(255)
-	);
+	{
+		sqlStmt := `
+		CREATE TABLE IF NOT EXISTS users (
+			id UUID PRIMARY KEY,
+			full_name VARCHAR(255),
+			nationality CHAR(3),
+			email VARCHAR(255),
+			password VARCHAR(255)
+		);
 
-	CREATE TABLE IF NOT EXISTS multi_factor_auth (
-		id UUID PRIMARY KEY,
-		slug varchar(255) UNIQUE,
-		user_id UUID,
-		secret_base32 CHAR(26)
-	);
-	`
-	_, err = db.ExecContext(ctx, sqlStmt)
-	if err != nil {
-		panic(err)
+		CREATE TABLE IF NOT EXISTS multi_factor_auth (
+			id UUID PRIMARY KEY,
+			slug varchar(255) UNIQUE,
+			user_id UUID,
+			secret_base32 CHAR(26)
+		);
+		`
+		_, err = db.ExecContext(ctx, sqlStmt)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// router setup
@@ -74,7 +77,9 @@ func main() {
 		})
 
 		r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
-			r.ParseForm()
+			if err = r.ParseForm(); err != nil {
+				log.Fatal("Fail to parse form:", err)
+			}
 
 			fullName := r.FormValue("fullName")
 			email := r.FormValue("email")
@@ -87,8 +92,8 @@ func main() {
 				log.Fatal("password is not confirmed")
 			}
 
-			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-			if err != nil {
+			hashedPassword, hashedPasswordErr := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+			if hashedPasswordErr != nil {
 				log.Fatal("Fail to hash password")
 			}
 
