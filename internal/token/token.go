@@ -1,4 +1,4 @@
-package utils
+package token
 
 import (
 	"crypto/rand"
@@ -8,9 +8,9 @@ import (
 
 const randomCharacters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 
-func GenerateRandomSessionToken(byteLength int) (string, error) {
+func GenerateRandom(byteLength int) (string, error) {
 	ret := make([]byte, byteLength)
-	for i := 0; i < byteLength; i++ {
+	for i := range byteLength {
 		randIdx, err := rand.Int(rand.Reader, big.NewInt(int64(len(randomCharacters))))
 		if err != nil {
 			return "", err

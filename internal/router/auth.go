@@ -2,13 +2,15 @@ package router
 
 import (
 	"database/sql"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"bintaro-university-admission/internal/database"
 	"bintaro-university-admission/internal/pages"
-	"bintaro-university-admission/internal/utils"
+	"bintaro-university-admission/internal/password"
+	"bintaro-university-admission/internal/token"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
@@ -17,6 +19,9 @@ import (
 
 const cookieNameSessionToken = "session_token"
 
+const logKeyError = "error"
+
+//nolint:gocognit,funlen
 func auth(r chi.Router, db *sql.DB) {
 	r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
 		login := pages.Login()
@@ -25,7 +30,8 @@ func auth(r chi.Router, db *sql.DB) {
 
 	r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
-			log.Fatal("Fail to parse form:", err)
+			slog.ErrorContext(r.Context(), "Fail to parse form", logKeyError, err)
+			os.Exit(1)
 		}
 
 		email := r.FormValue("email")
@@ -33,16 +39,19 @@ func auth(r chi.Router, db *sql.DB) {
 
 		user, userErr := database.GetUser(r.Context(), db, email)
 		if userErr != nil {
-			log.Fatal("User not found: ", userErr)
+			slog.ErrorContext(r.Context(), "User not found", logKeyError, userErr)
+			os.Exit(1)
 		}
 
-		if err := utils.ValidatePassword(user.ExpectedPassword, inputtedPassword); err != nil {
-			log.Fatal("Wrong password: ", err)
+		if err := password.Validate(user.ExpectedPassword, inputtedPassword); err != nil {
+			slog.ErrorContext(r.Context(), "Wrong password", logKeyError, err)
+			os.Exit(1)
 		}
 
-		token, err := utils.GenerateRandomSessionToken(32)
+		token, err := token.GenerateRandom(32)
 		if err != nil {
-			log.Fatal("Error on token generation: ", err)
+			slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
+			os.Exit(1)
 		}
 
 		tokenExpiry := time.Now().Add(1 * time.Hour)
@@ -54,7 +63,8 @@ func auth(r chi.Router, db *sql.DB) {
 			ExpiresAt:    tokenExpiry,
 		}
 		if insertErr := database.InsertSession(r.Context(), db, s); insertErr != nil {
-			log.Fatal("Failed to insert session: ", err)
+			slog.ErrorContext(r.Context(), "Failed to insert session", logKeyError, err)
+			os.Exit(1)
 		}
 
 		cookie := http.Cookie{
@@ -77,19 +87,27 @@ func auth(r chi.Router, db *sql.DB) {
 
 	r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
-			log.Fatal("Fail to parse form: ", err)
+			slog.ErrorContext(r.Context(), "Failed to parse form", logKeyError, err)
+			os.Exit(1)
 		}
 
-		password := r.FormValue("password")
+		pwd := r.FormValue("password")
 		confirmPassword := r.FormValue("confirmPassword")
 
-		if password != confirmPassword {
-			log.Fatal("password is not confirmed")
+		if pwd != confirmPassword {
+			slog.ErrorContext(r.Context(), "Password is not confirmed")
+			os.Exit(1)
 		}
 
-		hashedPassword, hashedPasswordErr := utils.HashPassword(password)
+		hashedPassword, hashedPasswordErr := password.Hash(pwd)
 		if hashedPasswordErr != nil {
-			log.Fatal("Failed to hash password: ", hashedPasswordErr)
+			slog.ErrorContext(
+				r.Context(),
+				"Failed to hash password",
+				logKeyError,
+				hashedPasswordErr,
+			)
+			os.Exit(1)
 		}
 
 		fullName := r.FormValue("fullName")
@@ -105,12 +123,14 @@ func auth(r chi.Router, db *sql.DB) {
 			HashedPassword: hashedPassword,
 		}
 		if insertError := database.InsertUser(r.Context(), db, createUserRequest); insertError != nil {
-			log.Fatal("Fail to register account: ", insertError)
+			slog.ErrorContext(r.Context(), "Fail to register account", logKeyError, insertError)
+			os.Exit(1)
 		}
 
-		token, err := utils.GenerateRandomSessionToken(32)
+		t, err := token.GenerateRandom(32)
 		if err != nil {
-			log.Fatal("Error on token generation: ", err)
+			slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
+			os.Exit(1)
 		}
 
 		tokenExpiry := time.Now().Add(1 * time.Hour)
@@ -118,16 +138,22 @@ func auth(r chi.Router, db *sql.DB) {
 		s := database.Session{
 			ID:           uuid.NewString(),
 			UserID:       createUserRequest.ID,
-			SessionToken: token,
+			SessionToken: t,
 			ExpiresAt:    tokenExpiry,
 		}
 		if insertSessionErr := database.InsertSession(r.Context(), db, s); insertSessionErr != nil {
-			log.Fatal("Error when saving session token: ", insertSessionErr)
+			slog.ErrorContext(
+				r.Context(),
+				"Error when saving session token",
+				logKeyError,
+				insertSessionErr,
+			)
+			os.Exit(1)
 		}
 
 		cookie := http.Cookie{
 			Name:     cookieNameSessionToken,
-			Value:    token,
+			Value:    t,
 			HttpOnly: true,
 			Secure:   true,
 			Expires:  tokenExpiry,

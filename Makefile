@@ -4,7 +4,14 @@ vendor:
 
 .PHONY: fmt
 fmt:
-	go fmt ./... && templ fmt . && templ generate
+	golines -w .
+	gofmt -w .
+	templ fmt .
+	templ generate
+
+.PHONY: lint
+lint:
+	golangci-lint run ./...
 
 .PHONY: start
 start: fmt

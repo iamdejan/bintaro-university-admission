@@ -11,6 +11,7 @@ type GetUserResponse struct {
 	ExpectedPassword string
 }
 
+//nolint:gosec // this is just a query
 const getPasswordSQLQuery = `
 	SELECT id
 	,password
@@ -19,7 +20,6 @@ const getPasswordSQLQuery = `
 `
 
 func GetUser(ctx context.Context, db *sql.DB, email string) (*GetUserResponse, error) {
-
 	row := db.QueryRowContext(ctx, getPasswordSQLQuery, email)
 	var userID string
 	var expectedPassword string
@@ -60,6 +60,14 @@ const insertSQLQuery = `
 	`
 
 func InsertUser(ctx context.Context, db *sql.DB, user CreateUserRequest) error {
-	_, err := db.ExecContext(ctx, insertSQLQuery, user.ID, user.FullName, user.Nationality, user.Email, user.HashedPassword)
+	_, err := db.ExecContext(
+		ctx,
+		insertSQLQuery,
+		user.ID,
+		user.FullName,
+		user.Nationality,
+		user.Email,
+		user.HashedPassword,
+	)
 	return err
 }

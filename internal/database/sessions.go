@@ -28,6 +28,13 @@ const insertSessionSQLQuery = `
 `
 
 func InsertSession(ctx context.Context, db *sql.DB, session Session) error {
-	_, err := db.ExecContext(ctx, insertSessionSQLQuery, session.ID, session.UserID, session.SessionToken, session.ExpiresAt)
+	_, err := db.ExecContext(
+		ctx,
+		insertSessionSQLQuery,
+		session.ID,
+		session.UserID,
+		session.SessionToken,
+		session.ExpiresAt,
+	)
 	return err
 }
