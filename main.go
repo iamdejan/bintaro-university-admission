@@ -12,11 +12,10 @@ import (
 )
 
 func main() {
-	index := pages.Index("Dejan")
-
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		index := pages.Index("World")
 		templ.Handler(index).ServeHTTP(w, r)
 	})
 
