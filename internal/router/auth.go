@@ -17,13 +17,27 @@ import (
 	"github.com/google/uuid"
 )
 
-const cookieNameSessionToken = "session_token"
+const (
+	cookieNameSessionToken = "session_token"
+	cookieNameErrorMessage = "error_message"
+)
 
 const logKeyError = "error"
 
 //nolint:gocognit,funlen
 func auth(r chi.Router, db *sql.DB) {
 	r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
+		cookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "",
+			HttpOnly: true,
+			Secure:   true,
+			MaxAge:   -1,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		}
+		http.SetCookie(w, &cookie)
+
 		login := pages.Login()
 		templ.Handler(login).ServeHTTP(w, r)
 	})
@@ -74,13 +88,25 @@ func auth(r chi.Router, db *sql.DB) {
 			Secure:   true,
 			Expires:  tokenExpiry,
 			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
 		}
 		http.SetCookie(w, &cookie)
 
-		http.Redirect(w, r, "/dashboard", http.StatusMovedPermanently)
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	})
 
 	r.Get("/register", func(w http.ResponseWriter, r *http.Request) {
+		cookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "",
+			HttpOnly: true,
+			Secure:   true,
+			MaxAge:   -1,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		}
+		http.SetCookie(w, &cookie)
+
 		register := pages.Register()
 		templ.Handler(register).ServeHTTP(w, r)
 	})
@@ -158,13 +184,13 @@ func auth(r chi.Router, db *sql.DB) {
 			Secure:   true,
 			Expires:  tokenExpiry,
 			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
 		}
 		http.SetCookie(w, &cookie)
-
-		http.Redirect(w, r, "/dashboard", http.StatusMovedPermanently)
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	})
 
-	r.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
+	r.With(authMiddleware).Get("/logout", func(w http.ResponseWriter, r *http.Request) {
 		c, cookieErr := r.Cookie(cookieNameSessionToken)
 		if cookieErr != nil {
 			slog.ErrorContext(
@@ -192,8 +218,9 @@ func auth(r chi.Router, db *sql.DB) {
 			Secure:   true,
 			MaxAge:   -1,
 			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
 		}
 		http.SetCookie(w, &cookie)
-		http.Redirect(w, r, "/auth/login", http.StatusMovedPermanently)
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 	})
 }

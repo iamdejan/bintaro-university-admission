@@ -25,7 +25,7 @@ func NewRouter(db *sql.DB) http.Handler {
 	r.Route("/auth", func(r chi.Router) {
 		auth(r, db)
 	})
-	r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
+	r.With(authMiddleware).Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		dashboard := pages.Dashboard()
 		templ.Handler(dashboard).ServeHTTP(w, r)
 	})
