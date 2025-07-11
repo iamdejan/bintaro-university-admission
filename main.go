@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -15,8 +16,22 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		index := pages.Index("World")
+		index := pages.Index()
 		templ.Handler(index).ServeHTTP(w, r)
+	})
+	r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./static/favicon.ico")
+	})
+	r.Route("/auth", func(r chi.Router) {
+		r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
+			login := pages.Login()
+			templ.Handler(login).ServeHTTP(w, r)
+		})
+
+		r.Get("/register", func(w http.ResponseWriter, r *http.Request) {
+			register := pages.Register()
+			templ.Handler(register).ServeHTTP(w, r)
+		})
 	})
 
 	server := http.Server{
@@ -26,5 +41,8 @@ func main() {
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  15 * time.Second,
 	}
-	_ = server.ListenAndServe()
+	log.Print("Running server at ", server.Addr)
+	if err := server.ListenAndServe(); err != nil {
+		panic(err)
+	}
 }

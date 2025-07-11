@@ -6,3 +6,7 @@ insert_final_newline = true
 [*.{go,templ}]
 indent_size = 8
 indent_style = tab
+
+[Makefile]
+indent_size = 4
+indent_style = tab

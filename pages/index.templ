@@ -1,5 +1,340 @@
 package pages
 
-templ Index(name string) {
-	<div>Hello, { name }</div>
+templ Index() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Bintaro University Admission - Dashboard</title>
+			<style>
+                        * {
+                                margin: 0;
+                                padding: 0;
+                                box-sizing: border-box;
+                        }
+
+                        body {
+                                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                min-height: 100vh;
+                                display: flex;
+                                flex-direction: column;
+                        }
+
+                        .navbar {
+                                background: rgba(255, 255, 255, 0.1);
+                                backdrop-filter: blur(10px);
+                                padding: 1rem 2rem;
+                                box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+                                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                position: relative;
+                        }
+
+                        .navbar h1 {
+                                color: white;
+                                font-size: 1.5rem;
+                                font-weight: 600;
+                                letter-spacing: 0.5px;
+                                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                        }
+
+                        .hamburger-menu {
+                                position: relative;
+                        }
+
+                        .hamburger-btn {
+                                background: none;
+                                border: none;
+                                cursor: pointer;
+                                display: flex;
+                                flex-direction: column;
+                                width: 30px;
+                                height: 24px;
+                                justify-content: space-between;
+                                transition: all 0.3s ease;
+                        }
+
+                        .hamburger-btn span {
+                                display: block;
+                                width: 100%;
+                                height: 3px;
+                                background: white;
+                                border-radius: 2px;
+                                transition: all 0.3s ease;
+                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                        }
+
+                        .hamburger-btn:hover span {
+                                background: rgba(255, 255, 255, 0.8);
+                        }
+
+                        .hamburger-btn.active span:nth-child(1) {
+                                transform: rotate(45deg) translate(6px, 6px);
+                        }
+
+                        .hamburger-btn.active span:nth-child(2) {
+                                opacity: 0;
+                        }
+
+                        .hamburger-btn.active span:nth-child(3) {
+                                transform: rotate(-45deg) translate(6px, -6px);
+                        }
+
+                        .dropdown {
+                                position: absolute;
+                                top: 100%;
+                                right: 0;
+                                background: rgba(255, 255, 255, 0.95);
+                                backdrop-filter: blur(10px);
+                                border-radius: 12px;
+                                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                                border: 1px solid rgba(255, 255, 255, 0.3);
+                                min-width: 150px;
+                                margin-top: 10px;
+                                opacity: 0;
+                                visibility: hidden;
+                                transform: translateY(-10px);
+                                transition: all 0.3s ease;
+                                z-index: 100;
+                        }
+
+                        .dropdown.show {
+                                opacity: 1;
+                                visibility: visible;
+                                transform: translateY(0);
+                        }
+
+                        .dropdown-item {
+                                padding: 12px 16px;
+                                cursor: pointer;
+                                transition: background 0.3s ease;
+                                border-radius: 12px;
+                                color: #333;
+                                font-weight: 500;
+                        }
+
+                        .dropdown-item:hover {
+                                background: rgba(102, 126, 234, 0.1);
+                        }
+
+                        .dropdown-item:first-child {
+                                border-radius: 12px 12px 0 0;
+                        }
+
+                        .dropdown-item:last-child {
+                                border-radius: 0 0 12px 12px;
+                        }
+
+                        .main-content {
+                                flex: 1;
+                                padding: 2rem;
+                                display: flex;
+                                justify-content: center;
+                                align-items: flex-start;
+                        }
+
+                        .dashboard-container {
+                                width: 100%;
+                                max-width: 1200px;
+                        }
+
+                        .welcome-section {
+                                background: rgba(255, 255, 255, 0.95);
+                                backdrop-filter: blur(10px);
+                                border: 1px solid rgba(255, 255, 255, 0.3);
+                                border-radius: 20px;
+                                padding: 2rem;
+                                margin-bottom: 2rem;
+                                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                                animation: fadeInUp 0.6s ease-out;
+                        }
+
+                        @keyframes fadeInUp {
+                                from {
+                                        opacity: 0;
+                                        transform: translateY(30px);
+                                }
+                                to {
+                                        opacity: 1;
+                                        transform: translateY(0);
+                                }
+                        }
+
+                        .welcome-section h2 {
+                                color: #333;
+                                font-size: 2rem;
+                                margin-bottom: 0.5rem;
+                                font-weight: 600;
+                        }
+
+                        .welcome-section p {
+                                color: #666;
+                                font-size: 1.1rem;
+                                margin-bottom: 1rem;
+                        }
+
+                        .notifications-section {
+                                background: rgba(255, 255, 255, 0.95);
+                                backdrop-filter: blur(10px);
+                                border: 1px solid rgba(255, 255, 255, 0.3);
+                                border-radius: 20px;
+                                padding: 2rem;
+                                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                                animation: fadeInUp 0.6s ease-out 0.2s both;
+                        }
+
+                        .notifications-section h3 {
+                                color: #333;
+                                font-size: 1.5rem;
+                                margin-bottom: 1.5rem;
+                                font-weight: 600;
+                        }
+
+                        .notification-card {
+                                background: rgba(102, 126, 234, 0.05);
+                                border: 1px solid rgba(102, 126, 234, 0.2);
+                                border-radius: 16px;
+                                padding: 1.5rem;
+                                margin-bottom: 1rem;
+                                transition: all 0.3s ease;
+                                position: relative;
+                                overflow: hidden;
+                        }
+
+                        .notification-card::before {
+                                content: "";
+                                position: absolute;
+                                top: 0;
+                                left: 0;
+                                width: 4px;
+                                height: 100%;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        }
+
+                        .notification-card:hover {
+                                transform: translateY(-2px);
+                                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+                        }
+
+                        .notification-title {
+                                color: #333;
+                                font-size: 1.2rem;
+                                font-weight: 600;
+                                margin-bottom: 0.5rem;
+                        }
+
+                        .notification-summary {
+                                color: #666;
+                                font-size: 0.95rem;
+                                line-height: 1.6;
+                                margin-bottom: 1rem;
+                        }
+
+                        .read-more-btn {
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                border: none;
+                                padding: 0.6rem 1.2rem;
+                                border-radius: 8px;
+                                font-size: 0.9rem;
+                                font-weight: 500;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                        }
+
+                        .read-more-btn:hover {
+                                transform: translateY(-1px);
+                                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+                        }
+
+                        .read-more-btn:active {
+                                transform: translateY(0);
+                        }
+
+                        @media (max-width: 768px) {
+                                .navbar {
+                                        padding: 1rem;
+                                }
+
+                                .navbar h1 {
+                                        font-size: 1.2rem;
+                                }
+
+                                .main-content {
+                                        padding: 1rem;
+                                }
+
+                                .welcome-section,
+                                .notifications-section {
+                                        padding: 1.5rem;
+                                }
+
+                                .stats-grid {
+                                        grid-template-columns: 1fr;
+                                }
+                        }
+                </style>
+		</head>
+		<body>
+			<nav class="navbar">
+				<h1>
+					<a href="/" style="text-decoration: none; color: white;">Bintaro University Admission</a>
+				</h1>
+				<div class="hamburger-menu">
+					<button class="hamburger-btn" onclick="toggleDropdown()">
+						<span></span>
+						<span></span>
+						<span></span>
+					</button>
+					<div class="dropdown" id="dropdown">
+						<a href="/auth/login" style="text-decoration: none; color: black;">
+							<div class="dropdown-item">Login</div>
+						</a>
+						<a href="/auth/register" style="text-decoration: none; color: black;">
+							<div class="dropdown-item">Register</div>
+						</a>
+					</div>
+				</div>
+			</nav>
+			<div class="main-content">
+				<div class="dashboard-container">
+					<div class="welcome-section">
+						<h2>Welcome to Bintaro University Admission</h2>
+						<p>Track your admission progress and stay updated with important notifications.</p>
+					</div>
+				</div>
+			</div>
+			<script>
+                        function toggleDropdown() {
+                                const dropdown = document.getElementById("dropdown");
+                                const hamburgerBtn = document.querySelector(".hamburger-btn");
+
+                                dropdown.classList.toggle("show");
+                                hamburgerBtn.classList.toggle("active");
+                        }
+
+                        // Close dropdown when clicking outside
+                        document.addEventListener("click", function (event) {
+                                const hamburgerMenu = document.querySelector(".hamburger-menu");
+                                const dropdown = document.getElementById("dropdown");
+                                const hamburgerBtn = document.querySelector(".hamburger-btn");
+
+                                if (!hamburgerMenu.contains(event.target)) {
+                                        dropdown.classList.remove("show");
+                                        hamburgerBtn.classList.remove("active");
+                                }
+                        });
+
+                        // Prevent dropdown from closing when clicking inside it
+                        document.getElementById("dropdown").addEventListener("click", function (event) {
+                                event.stopPropagation();
+                        });
+                </script>
+		</body>
+	</html>
 }
