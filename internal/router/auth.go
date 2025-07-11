@@ -165,6 +165,26 @@ func auth(r chi.Router, db *sql.DB) {
 	})
 
 	r.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
+		c, cookieErr := r.Cookie(cookieNameSessionToken)
+		if cookieErr != nil {
+			slog.ErrorContext(
+				r.Context(),
+				"Error when getting cookie",
+				logKeyError,
+				cookieErr,
+			)
+			os.Exit(1)
+		}
+		if deleteErr := database.DeleteSession(r.Context(), db, c.Value); deleteErr != nil {
+			slog.ErrorContext(
+				r.Context(),
+				"Error when deleting cookie",
+				logKeyError,
+				deleteErr,
+			)
+			os.Exit(1)
+		}
+
 		cookie := http.Cookie{
 			Name:     cookieNameSessionToken,
 			Value:    "",

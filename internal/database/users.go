@@ -11,16 +11,15 @@ type GetUserResponse struct {
 	ExpectedPassword string
 }
 
-//nolint:gosec // this is just a query
-const getPasswordSQLQuery = `
-	SELECT id
-	,password
-	FROM users
-	WHERE email = $1
+const getUserSQLQuery = `
+SELECT id
+,password
+FROM users
+WHERE email = $1
 `
 
 func GetUser(ctx context.Context, db *sql.DB, email string) (*GetUserResponse, error) {
-	row := db.QueryRowContext(ctx, getPasswordSQLQuery, email)
+	row := db.QueryRowContext(ctx, getUserSQLQuery, email)
 	var userID string
 	var expectedPassword string
 
@@ -43,26 +42,26 @@ type CreateUserRequest struct {
 	HashedPassword string
 }
 
-const insertSQLQuery = `
-	INSERT INTO users (
-		id
-		,full_name
-		,nationality
-		,email
-		,password
-	) VALUES (
-		$1
-		,$2
-		,$3
-		,$4
-		,$5
-	);
-	`
+const insertUserSQLQuery = `
+INSERT INTO users (
+	id
+	,full_name
+	,nationality
+	,email
+	,password
+) VALUES (
+	$1
+	,$2
+	,$3
+	,$4
+	,$5
+);
+`
 
 func InsertUser(ctx context.Context, db *sql.DB, user CreateUserRequest) error {
 	_, err := db.ExecContext(
 		ctx,
-		insertSQLQuery,
+		insertUserSQLQuery,
 		user.ID,
 		user.FullName,
 		user.Nationality,

@@ -14,17 +14,17 @@ type Session struct {
 }
 
 const insertSessionSQLQuery = `
-	INSERT INTO sessions(
-		id
-		,user_id
-		,session_token
-		,expires_at
-	) VALUES (
-		$1
-		,$2
-		,$3
-		,$4 
-	)
+INSERT INTO sessions(
+	id
+	,user_id
+	,session_token
+	,expires_at
+) VALUES (
+	$1
+	,$2
+	,$3
+	,$4 
+)
 `
 
 func InsertSession(ctx context.Context, db *sql.DB, session Session) error {
@@ -36,5 +36,15 @@ func InsertSession(ctx context.Context, db *sql.DB, session Session) error {
 		session.SessionToken,
 		session.ExpiresAt,
 	)
+	return err
+}
+
+const deleteSQLQuery = `
+DELETE FROM sessions
+WHERE session_token = $1
+`
+
+func DeleteSession(ctx context.Context, db *sql.DB, sessionToken string) error {
+	_, err := db.ExecContext(ctx, deleteSQLQuery, sessionToken)
 	return err
 }

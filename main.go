@@ -12,6 +12,30 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const initiateTablesSQLQuery = `
+CREATE TABLE IF NOT EXISTS users (
+	id UUID PRIMARY KEY,
+	full_name VARCHAR(255),
+	nationality CHAR(3),
+	email VARCHAR(255) UNIQUE,
+	password VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+	id UUID PRIMARY KEY,
+	user_id UUID,
+	session_token VARCHAR(255) UNIQUE,
+	expires_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS multi_factor_auth (
+	id UUID PRIMARY KEY,
+	slug varchar(255) UNIQUE,
+	user_id UUID,
+	secret_base32 CHAR(26)
+);
+`
+
 func main() {
 	ctx := context.Background()
 
@@ -22,30 +46,7 @@ func main() {
 	}
 	defer db.Close()
 
-	sqlStmt := `
-	CREATE TABLE IF NOT EXISTS users (
-		id UUID PRIMARY KEY,
-		full_name VARCHAR(255),
-		nationality CHAR(3),
-		email VARCHAR(255) UNIQUE,
-		password VARCHAR(255)
-	);
-
-	CREATE TABLE IF NOT EXISTS sessions (
-		id UUID PRIMARY KEY,
-		user_id UUID,
-		session_token VARCHAR(255),
-		expires_at TIMESTAMPTZ
-	);
-
-	CREATE TABLE IF NOT EXISTS multi_factor_auth (
-		id UUID PRIMARY KEY,
-		slug varchar(255) UNIQUE,
-		user_id UUID,
-		secret_base32 CHAR(26)
-	);
-	`
-	_, err = db.ExecContext(ctx, sqlStmt)
+	_, err = db.ExecContext(ctx, initiateTablesSQLQuery)
 	if err != nil {
 		panic(err)
 	}
