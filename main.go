@@ -12,7 +12,9 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -28,9 +30,10 @@ func main() {
 	sqlStmt := `
 	CREATE TABLE IF NOT EXISTS users (
 		id UUID PRIMARY KEY,
+		full_name VARCHAR(255),
+		nationality CHAR(3),
 		email VARCHAR(255),
-		password VARCHAR(255),
-		nationality CHAR(3)
+		password VARCHAR(255)
 	);
 
 	CREATE TABLE IF NOT EXISTS multi_factor_auth (
@@ -68,6 +71,48 @@ func main() {
 		r.Get("/register", func(w http.ResponseWriter, r *http.Request) {
 			register := pages.Register()
 			templ.Handler(register).ServeHTTP(w, r)
+		})
+
+		r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
+			r.ParseForm()
+
+			fullName := r.FormValue("fullName")
+			email := r.FormValue("email")
+			password := r.FormValue("password")
+			confirmPassword := r.FormValue("confirmPassword")
+			nationality := r.FormValue("nationality")
+			id := uuid.NewString()
+
+			if password != confirmPassword {
+				log.Fatal("password is not confirmed")
+			}
+
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+			if err != nil {
+				log.Fatal("Fail to hash password")
+			}
+
+			sqlStmt := `
+			INSERT INTO users (
+				id
+				,full_name
+				,nationality
+				,email
+				,password
+			) VALUES (
+				$1
+				,$2
+				,$3
+				,$4
+				,$5
+			);
+			`
+			_, err = db.ExecContext(r.Context(), sqlStmt, id, fullName, nationality, email, string(hashedPassword))
+			if err != nil {
+				log.Fatal("Fail to register account:", err)
+			}
+
+			http.Redirect(w, r, "/dashboard", http.StatusMovedPermanently)
 		})
 
 		r.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
