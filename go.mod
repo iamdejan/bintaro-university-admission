@@ -5,6 +5,7 @@ go 1.24.5
 require (
 	github.com/a-h/templ v0.3.906
 	github.com/go-chi/chi/v5 v5.2.2
+	github.com/mattn/go-sqlite3 v1.14.28
 )
 
 require (
@@ -16,7 +17,6 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-sqlite3 v1.14.28 // indirect
 	github.com/natefinch/atomic v1.0.1 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.39.0 // indirect
