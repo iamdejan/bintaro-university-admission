@@ -28,10 +28,23 @@ func main() {
 			templ.Handler(login).ServeHTTP(w, r)
 		})
 
+		r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/dashboard", http.StatusMovedPermanently)
+		})
+
 		r.Get("/register", func(w http.ResponseWriter, r *http.Request) {
 			register := pages.Register()
 			templ.Handler(register).ServeHTTP(w, r)
 		})
+
+		r.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
+			// redirect to login page
+			http.Redirect(w, r, "/auth/login", http.StatusMovedPermanently)
+		})
+	})
+	r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		dashboard := pages.Dashboard()
+		templ.Handler(dashboard).ServeHTTP(w, r)
 	})
 
 	server := http.Server{
