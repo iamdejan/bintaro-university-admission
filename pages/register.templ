@@ -238,7 +238,7 @@ templ Register() {
 						<h2>Create Account</h2>
 						<p>Join Bintaro University today</p>
 					</div>
-					<form id="registerForm">
+					<form id="registerForm" action="/auth/register" method="post">
 						<div class="form-group">
 							<label for="fullName">Full Name</label>
 							<input type="text" id="fullName" name="fullName" required placeholder="Enter your full name"/>
@@ -526,7 +526,8 @@ templ Register() {
 				</div>
 			</div>
 			<script>
-				document.getElementById("registerForm").addEventListener("submit", function (e) {
+				const registerForm = document.getElementById("registerForm");
+				registerForm.addEventListener("submit", function (e) {
 					e.preventDefault();
 
 					if (validateForm()) {
@@ -534,15 +535,8 @@ templ Register() {
 						btn.textContent = "Creating Account...";
 						btn.disabled = true;
 
-						setTimeout(() => {
-							alert("Account created successfully! (This is a demo)");
-							btn.textContent = "Create Account";
-							btn.disabled = false;
-
-							// Reset form
-							document.getElementById("registerForm").reset();
-							clearValidationStates();
-						}, 2000);
+						alert("Account created successfully! (This is a demo)");
+						registerForm.submit();
 					}
 				});
 
