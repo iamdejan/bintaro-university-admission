@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -15,6 +16,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	// database setup
 	db, err := sql.Open("sqlite3", "./database.db")
 	if err != nil {
@@ -37,7 +40,7 @@ func main() {
 		secret_base32 CHAR(26)
 	);
 	`
-	_, err = db.Exec(sqlStmt)
+	_, err = db.ExecContext(ctx, sqlStmt)
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +88,7 @@ func main() {
 		IdleTimeout:  15 * time.Second,
 	}
 	log.Print("Running server at ", server.Addr)
-	if err := server.ListenAndServe(); err != nil {
+	if err = server.ListenAndServe(); err != nil {
 		panic(err)
 	}
 }
