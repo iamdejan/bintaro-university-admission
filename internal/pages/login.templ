@@ -161,9 +161,8 @@ templ Login() {
 				<div class="login-card">
 					<div class="login-header">
 						<h2>Login</h2>
-						<p>Please sign in to your account</p>
 					</div>
-					<form id="loginForm" action="/auth/login" method="post">
+					<form id="loginForm" action="/login" method="post">
 						<div class="form-group">
 							<label for="email">Email Address</label>
 							<input type="email" id="email" name="email" required placeholder="Enter your email"/>
@@ -178,7 +177,7 @@ templ Login() {
 						<a href="#" onclick="showForgotPassword()">Forgot your password?</a>
 					</div>
 					<div class="link-below-form">
-						<a href="/auth/register">Do not have any account?</a>
+						<a href="/register">Do not have any account?</a>
 					</div>
 				</div>
 			</div>

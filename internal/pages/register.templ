@@ -238,7 +238,7 @@ templ Register() {
 						<h2>Create Account</h2>
 						<p>Join Bintaro University today</p>
 					</div>
-					<form id="registerForm" action="/auth/register" method="post">
+					<form id="registerForm" action="/register" method="post">
 						<div class="form-group">
 							<label for="fullName">Full Name</label>
 							<input type="text" id="fullName" name="fullName" required placeholder="Enter your full name"/>
@@ -518,10 +518,10 @@ templ Register() {
 						<button type="submit" class="register-btn">Create Account</button>
 					</form>
 					<div class="link-below-form">
-						<a href="/auth/login" onclick="showLoginPage()">Already have an account? Sign in</a>
+						<a href="/login" onclick="showLoginPage()">Already have an account? Sign in</a>
 					</div>
 					<div class="link-below-form">
-						<a href="/auth/login">Already have an account?</a>
+						<a href="/login">Already have an account?</a>
 					</div>
 				</div>
 			</div>
