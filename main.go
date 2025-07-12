@@ -18,13 +18,12 @@ CREATE TABLE IF NOT EXISTS users (
 	full_name VARCHAR(255),
 	nationality CHAR(3),
 	email VARCHAR(255) UNIQUE,
-	password VARCHAR(255)
+	hashed_password VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
-	id UUID PRIMARY KEY,
+	session_token VARCHAR(255) PRIMARY KEY,
 	user_id UUID,
-	session_token VARCHAR(255) UNIQUE,
 	expires_at TIMESTAMPTZ
 );
 
@@ -51,7 +50,9 @@ func main() {
 		panic(err)
 	}
 
-	r := router.NewRouter(db)
+	hg := router.NewHandlerGroup(db)
+	mg := router.NewMiddlewareGroup(db)
+	r := router.NewRouter(hg, mg)
 	server := http.Server{
 		Handler:      r,
 		Addr:         ":9000",

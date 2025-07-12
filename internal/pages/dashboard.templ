@@ -1,6 +1,6 @@
 package pages
 
-templ Dashboard() {
+templ Dashboard(fullName string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -297,7 +297,7 @@ templ Dashboard() {
 			<div class="main-content">
 				<div class="dashboard-container">
 					<div class="welcome-section">
-						<h2>Welcome to Your Dashboard</h2>
+						<h2>Welcome, { fullName }</h2>
 						<p>Track your admission progress and stay updated with important notifications.</p>
 					</div>
 					<div class="notifications-section">
@@ -337,8 +337,8 @@ templ Dashboard() {
 
 				function logout() {
 					if (confirm("Are you sure you want to logout?")) {
-						// Here you would typically redirect to login page
-						window.location.href = '/auth/logout';
+						window.location.href = '/logout';
+						return;
 					}
 
 					// Close dropdown after action

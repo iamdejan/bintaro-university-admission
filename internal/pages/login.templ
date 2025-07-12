@@ -1,11 +1,11 @@
 package pages
 
-templ Login() {
+templ Login(errorMessage string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
 			<meta charset="UTF-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>Bintaro University Admission - Login</title>
 			<style>
 				* {
@@ -13,6 +13,7 @@ templ Login() {
 					padding: 0;
 					box-sizing: border-box;
 				}
+
 				body {
 					font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,6 +21,7 @@ templ Login() {
 					display: flex;
 					flex-direction: column;
 				}
+
 				.navbar {
 					background: rgba(255, 255, 255, 0.1);
 					backdrop-filter: blur(10px);
@@ -27,14 +29,16 @@ templ Login() {
 					box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
 					border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 				}
+
 				.navbar h1 {
 					text-align: center;
-					color: white;
+					color: #fff;
 					font-size: 2rem;
 					font-weight: 600;
 					letter-spacing: 0.5px;
 					text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 				}
+
 				.login-container {
 					flex: 1;
 					display: flex;
@@ -42,6 +46,7 @@ templ Login() {
 					align-items: center;
 					padding: 2rem;
 				}
+
 				.login-card {
 					background: rgba(255, 255, 255, 0.95);
 					padding: 3rem;
@@ -54,6 +59,7 @@ templ Login() {
 					transform: translateY(-20px);
 					animation: fadeInUp 0.8s ease-out;
 				}
+
 				@keyframes fadeInUp {
 					from {
 						opacity: 0;
@@ -64,22 +70,61 @@ templ Login() {
 						transform: translateY(-20px);
 					}
 				}
+
 				.login-header {
 					text-align: center;
 					margin-bottom: 2rem;
 				}
+
 				.login-header h2 {
 					color: #333;
 					font-size: 1.8rem;
 					margin-bottom: 0.5rem;
 				}
+
 				.login-header p {
 					color: #666;
 					font-size: 0.9rem;
 				}
+
+				.error-alert {
+					background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+					color: white;
+					padding: 1rem;
+					border-radius: 12px;
+					margin-bottom: 1.5rem;
+					border: 1px solid rgba(255, 255, 255, 0.2);
+					box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);
+					display: block;
+					animation: slideDown 0.4s ease-out;
+				}
+
+				@keyframes slideDown {
+					from {
+						opacity: 0;
+						transform: translateY(-10px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+
+				.error-alert .alert-icon {
+					display: inline-block;
+					margin-right: 0.5rem;
+					font-weight: bold;
+				}
+
+				.error-alert .alert-message {
+					font-size: 0.9rem;
+					font-weight: 500;
+				}
+
 				.form-group {
 					margin-bottom: 1.5rem;
 				}
+
 				.form-group label {
 					display: block;
 					margin-bottom: 0.5rem;
@@ -87,6 +132,7 @@ templ Login() {
 					font-weight: 500;
 					font-size: 0.9rem;
 				}
+
 				.form-group input {
 					width: 100%;
 					padding: 0.8rem 1rem;
@@ -96,20 +142,23 @@ templ Login() {
 					transition: all 0.3s ease;
 					background: rgba(255, 255, 255, 0.9);
 				}
+
 				.form-group input:focus {
 					outline: none;
 					border-color: #667eea;
 					box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 					transform: translateY(-1px);
 				}
+
 				.form-group input:hover {
 					border-color: #c1c7d0;
 				}
+
 				.login-btn {
 					width: 100%;
 					padding: 0.9rem;
 					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-					color: white;
+					color: #fff;
 					border: none;
 					border-radius: 12px;
 					font-size: 1rem;
@@ -119,27 +168,33 @@ templ Login() {
 					box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 					margin-top: 1rem;
 				}
+
 				.login-btn:hover {
 					transform: translateY(-2px);
 					box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 				}
+
 				.login-btn:active {
 					transform: translateY(0);
 				}
+
 				.link-below-form {
 					text-align: center;
 					margin-top: 1.5rem;
 				}
+
 				.link-below-form a {
 					color: #667eea;
 					text-decoration: none;
 					font-size: 0.9rem;
 					transition: color 0.3s ease;
 				}
+
 				.link-below-form a:hover {
 					color: #764ba2;
 					text-decoration: underline;
 				}
+
 				@media (max-width: 480px) {
 					.login-card {
 						padding: 2rem;
@@ -161,9 +216,15 @@ templ Login() {
 				<div class="login-card">
 					<div class="login-header">
 						<h2>Login</h2>
-						<p>Please sign in to your account</p>
 					</div>
-					<form id="loginForm" action="/auth/login" method="post">
+					if errorMessage != "" {
+						<!-- Error Alert Section -->
+						<div class="error-alert" id="errorAlert">
+							<span class="alert-icon">⚠</span>
+							<span class="alert-message" id="errorMessage">{ errorMessage }</span>
+						</div>
+					}
+					<form action="/login" id="loginForm" method="post">
 						<div class="form-group">
 							<label for="email">Email Address</label>
 							<input type="email" id="email" name="email" required placeholder="Enter your email"/>
@@ -178,7 +239,7 @@ templ Login() {
 						<a href="#" onclick="showForgotPassword()">Forgot your password?</a>
 					</div>
 					<div class="link-below-form">
-						<a href="/auth/register">Do not have any account?</a>
+						<a href="/register">Do not have any account?</a>
 					</div>
 				</div>
 			</div>
@@ -197,6 +258,7 @@ templ Login() {
 						this.parentElement.style.transform = "translateY(0)";
 					});
 				});
+
 			</script>
 		</body>
 	</html>

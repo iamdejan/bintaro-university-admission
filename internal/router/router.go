@@ -1,7 +1,6 @@
 package router
 
 import (
-	"database/sql"
 	"net/http"
 
 	"bintaro-university-admission/internal/pages"
@@ -11,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func NewRouter(db *sql.DB) http.Handler {
+func NewRouter(hg HandlerGroup, mg MiddlewareGroup) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -22,13 +21,16 @@ func NewRouter(db *sql.DB) http.Handler {
 	r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./static/favicon.ico")
 	})
-	r.Route("/auth", func(r chi.Router) {
-		auth(r, db)
+	r.Get("/error", func(w http.ResponseWriter, r *http.Request) {
+		errorPage := pages.Error()
+		templ.Handler(errorPage).ServeHTTP(w, r)
 	})
-	r.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
-		dashboard := pages.Dashboard()
-		templ.Handler(dashboard).ServeHTTP(w, r)
-	})
+	r.Get("/login", hg.Login)
+	r.Post("/login", hg.PostLogin)
+	r.Get("/register", hg.Register)
+	r.Post("/register", hg.PostRegister)
+	r.With(mg.Authenticated).Get("/dashboard", hg.Dashboard)
+	r.With(mg.Authenticated).Get("/logout", hg.Logout)
 
 	return r
 }

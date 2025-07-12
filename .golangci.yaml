@@ -64,7 +64,7 @@ linters:
     - fatcontext # detects nested contexts in loops
     - forbidigo # forbids identifiers
     - funcorder # checks the order of functions, methods, and constructors
-    - funlen # tool for detection of long functions
+    # - funlen # tool for detection of long functions
     - gocheckcompilerdirectives # validates go compiler directive comments (//go:)
     - gochecknoglobals # checks that no global variables exist
     - gochecknoinits # checks that no init functions are present in Go code
@@ -386,7 +386,7 @@ linters:
       # - "default": report only the default slog logger
       # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-global
       # Default: ""
-      no-global: all
+      no-global: ""
       # Enforce using methods that accept a context.
       # Values:
       # - "": disabled
