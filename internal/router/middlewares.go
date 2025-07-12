@@ -96,7 +96,7 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 
 		user, userErr := database.GetUserByID(r.Context(), m.db, session.UserID)
 		if userErr != nil {
-			slog.ErrorContext(r.Context(), "User does not exist", logKeyError, cookieErr)
+			slog.ErrorContext(r.Context(), "User does not exist", logKeyError, userErr)
 
 			if deleteSessionErr := database.DeleteSession(r.Context(), m.db, sessionToken); deleteSessionErr != nil {
 				slog.ErrorContext(

@@ -147,7 +147,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 
 	s := database.NewSession(token, user.ID, tokenExpiry)
 	if insertErr := database.InsertSession(r.Context(), h.db, s); insertErr != nil {
-		slog.ErrorContext(r.Context(), "Failed to insert session", logKeyError, err)
+		slog.ErrorContext(r.Context(), "Failed to insert session", logKeyError, insertErr)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
 	}
