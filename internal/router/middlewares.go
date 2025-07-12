@@ -14,12 +14,14 @@ import (
 
 type MiddlewareGroup interface {
 	Authenticated(next http.Handler) http.Handler
-	Sanitized(next http.Handler) http.Handler
+	XSSProtected(next http.Handler) http.Handler
+	SecurityHeaders(next http.Handler) http.Handler
 }
 
 type MiddlewareGroupImpl struct {
-	userStore    store.UserStore
-	sessionStore store.SessionStore
+	userStore      store.UserStore
+	sessionStore   store.SessionStore
+	csrfTokenStore store.CSRFToken
 }
 
 func NewMiddlewareGroup(
@@ -141,8 +143,12 @@ var methodsNeedSanitazion = map[string]struct{}{
 	http.MethodDelete: {},
 }
 
-func (m *MiddlewareGroupImpl) Sanitized(next http.Handler) http.Handler {
+func (m *MiddlewareGroupImpl) XSSProtected(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+
 		if _, need := methodsNeedSanitazion[r.Method]; need {
 			for key, values := range r.Form {
 				sanitizedValues := make([]string, len(values))
@@ -153,5 +159,24 @@ func (m *MiddlewareGroupImpl) Sanitized(next http.Handler) http.Handler {
 			}
 			next.ServeHTTP(w, r)
 		}
+	})
+}
+
+func (m *MiddlewareGroupImpl) SecurityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set comprehensive CSP header
+		csp := []string{
+			"default-src 'self'",
+			"script-src 'self' 'unsafe-inline'",
+			"style-src 'self' 'unsafe-inline'",
+			"img-src 'self' data: https:",
+			"connect-src 'self'",
+		}
+
+		w.Header().Set("Content-Security-Policy", strings.Join(csp, "; "))
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		w.Header().Set("Permissions-Policy", "geolocation=(), microphone=()")
+
+		next.ServeHTTP(w, r)
 	})
 }

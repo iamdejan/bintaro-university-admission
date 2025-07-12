@@ -28,6 +28,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 	expires_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS csrf_tokens (
+	token VARCHAR(255) PRIMARY KEY,
+	expires_at TIMESTAMPTZ
+);
+
 CREATE TABLE IF NOT EXISTS multi_factor_auth (
 	id UUID PRIMARY KEY,
 	slug varchar(255) UNIQUE,
