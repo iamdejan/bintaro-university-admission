@@ -26,9 +26,9 @@ func NewRouter(hg HandlerGroup, mg MiddlewareGroup) http.Handler {
 		templ.Handler(errorPage).ServeHTTP(w, r)
 	})
 	r.Get("/login", hg.Login)
-	r.Post("/login", hg.PostLogin)
+	r.With(mg.Sanitized).Post("/login", hg.PostLogin)
 	r.Get("/register", hg.Register)
-	r.Post("/register", hg.PostRegister)
+	r.With(mg.Sanitized).Post("/register", hg.PostRegister)
 	r.With(mg.Authenticated).Get("/dashboard", hg.Dashboard)
 	r.With(mg.Authenticated).Get("/logout", hg.Logout)
 

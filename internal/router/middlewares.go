@@ -3,8 +3,10 @@ package router
 import (
 	"context"
 	"errors"
+	"html"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"bintaro-university-admission/internal/store"
@@ -12,6 +14,7 @@ import (
 
 type MiddlewareGroup interface {
 	Authenticated(next http.Handler) http.Handler
+	Sanitized(next http.Handler) http.Handler
 }
 
 type MiddlewareGroupImpl struct {
@@ -129,5 +132,26 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), userCtx{}, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+var methodsNeedSanitazion = map[string]struct{}{
+	http.MethodPost:   {},
+	http.MethodPut:    {},
+	http.MethodDelete: {},
+}
+
+func (m *MiddlewareGroupImpl) Sanitized(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, need := methodsNeedSanitazion[r.Method]; need {
+			for key, values := range r.Form {
+				sanitizedValues := make([]string, len(values))
+				for i, value := range values {
+					sanitizedValues[i] = html.EscapeString(strings.TrimSpace(value))
+				}
+				r.Form[key] = sanitizedValues
+			}
+			next.ServeHTTP(w, r)
+		}
 	})
 }

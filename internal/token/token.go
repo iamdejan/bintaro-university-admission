@@ -11,5 +11,5 @@ func GenerateRandom(byteLength int) (string, error) {
 		return "", err
 	}
 
-	return base64.URLEncoding.EncodeToString(ret), nil
+	return base64.URLEncoding.Strict().EncodeToString(ret), nil
 }
