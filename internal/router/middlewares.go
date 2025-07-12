@@ -35,11 +35,12 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 
 			errorMsgCookie := http.Cookie{
 				Name:     cookieNameErrorMessage,
-				Value:    "You need to login",
+				Value:    "Session expired. Please log in again.",
 				Expires:  time.Now().Add(10 * time.Minute),
 				HttpOnly: true,
 				Secure:   true,
 				SameSite: http.SameSiteStrictMode,
+				Path:     "/",
 			}
 			http.SetCookie(w, &errorMsgCookie)
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -81,11 +82,12 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 
 			errorMsgCookie := http.Cookie{
 				Name:     cookieNameErrorMessage,
-				Value:    "You need to login",
+				Value:    "Session expired. Please log in again.",
 				Expires:  time.Now().Add(10 * time.Minute),
 				HttpOnly: true,
 				Secure:   true,
 				SameSite: http.SameSiteStrictMode,
+				Path:     "/",
 			}
 			http.SetCookie(w, &errorMsgCookie)
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -109,11 +111,12 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 
 			errorMsgCookie := http.Cookie{
 				Name:     cookieNameErrorMessage,
-				Value:    "You need to login",
+				Value:    "Session expired. Please log in again.",
 				Expires:  time.Now().Add(10 * time.Minute),
 				HttpOnly: true,
 				Secure:   true,
 				SameSite: http.SameSiteStrictMode,
+				Path:     "/",
 			}
 			http.SetCookie(w, &errorMsgCookie)
 			http.Redirect(w, r, "/login", http.StatusSeeOther)

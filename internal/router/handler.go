@@ -44,6 +44,13 @@ func (h *HandlerGroupImpl) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HandlerGroupImpl) Login(w http.ResponseWriter, r *http.Request) {
+	c, _ := r.Cookie(cookieNameErrorMessage)
+	var errorMessage string
+	if c != nil {
+		errorMessage = c.Value
+	}
+	login := pages.Login(errorMessage)
+
 	cookie := http.Cookie{
 		Name:     cookieNameErrorMessage,
 		Value:    "",
@@ -55,7 +62,6 @@ func (h *HandlerGroupImpl) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	login := pages.Login()
 	templ.Handler(login).ServeHTTP(w, r)
 }
 
@@ -69,6 +75,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
 		}
 		http.SetCookie(w, &errorMsgCookie)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -97,6 +104,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
 		}
 		http.SetCookie(w, &errorMsgCookie)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -121,6 +129,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
 		}
 		http.SetCookie(w, &errorMsgCookie)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -158,6 +167,13 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HandlerGroupImpl) Register(w http.ResponseWriter, r *http.Request) {
+	c, _ := r.Cookie(cookieNameErrorMessage)
+	var errorMessage string
+	if c != nil {
+		errorMessage = c.Value
+	}
+	register := pages.Register(errorMessage)
+
 	cookie := http.Cookie{
 		Name:     cookieNameErrorMessage,
 		Value:    "",
@@ -169,7 +185,6 @@ func (h *HandlerGroupImpl) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	register := pages.Register()
 	templ.Handler(register).ServeHTTP(w, r)
 }
 
@@ -183,6 +198,7 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
 		}
 		http.SetCookie(w, &errorMsgCookie)
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
@@ -201,6 +217,7 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
 		}
 		http.SetCookie(w, &errorMsgCookie)
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
