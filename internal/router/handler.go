@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"bintaro-university-admission/internal/database"
 	"bintaro-university-admission/internal/pages"
 	"bintaro-university-admission/internal/password"
+	"bintaro-university-admission/internal/store"
 	"bintaro-university-admission/internal/token"
 
 	"github.com/a-h/templ"
@@ -30,12 +30,14 @@ type HandlerGroup interface {
 }
 
 type HandlerGroupImpl struct {
-	db *sql.DB
+	userStore    store.UserStore
+	sessionStore store.SessionStore
 }
 
-func NewHandlerGroup(db *sql.DB) HandlerGroup {
+func NewHandlerGroup(userStore store.UserStore, sessionStore store.SessionStore) HandlerGroup {
 	return &HandlerGroupImpl{
-		db: db,
+		userStore:    userStore,
+		sessionStore: sessionStore,
 	}
 }
 
@@ -86,7 +88,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	inputtedPassword := r.FormValue("password")
 
-	user, userErr := database.GetUserByEmail(r.Context(), h.db, email)
+	user, userErr := h.userStore.GetByID(r.Context(), email)
 	if userErr != nil {
 		slog.ErrorContext(
 			r.Context(),
@@ -146,8 +148,8 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 
 	tokenExpiry := time.Now().Add(1 * time.Hour)
 
-	s := database.NewSession(token, user.ID, tokenExpiry)
-	if insertErr := database.InsertSession(r.Context(), h.db, s); insertErr != nil {
+	s := store.NewSession(token, user.ID, tokenExpiry)
+	if insertErr := h.sessionStore.Insert(r.Context(), s); insertErr != nil {
 		slog.ErrorContext(r.Context(), "Failed to insert session", logKeyError, insertErr)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
@@ -242,7 +244,7 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 	nationality := r.FormValue("nationality")
 	userID := uuid.NewString()
 
-	existingUser, existingUserErr := database.GetUserByEmail(r.Context(), h.db, email)
+	existingUser, existingUserErr := h.userStore.GetByEmail(r.Context(), email)
 	if existingUserErr != nil && !errors.Is(existingUserErr, sql.ErrNoRows) {
 		slog.ErrorContext(
 			r.Context(),
@@ -273,14 +275,14 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	createUserRequest := database.User{
+	createUserRequest := store.User{
 		ID:             userID,
 		FullName:       fullName,
 		Nationality:    nationality,
 		Email:          email,
 		HashedPassword: hashedPassword,
 	}
-	if insertError := database.InsertUser(r.Context(), h.db, createUserRequest); insertError != nil {
+	if insertError := h.userStore.Insert(r.Context(), createUserRequest); insertError != nil {
 		slog.ErrorContext(r.Context(), "Fail to register account", logKeyError, insertError)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
@@ -295,8 +297,8 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 
 	tokenExpiry := time.Now().Add(1 * time.Hour)
 
-	s := database.NewSession(t, userID, tokenExpiry)
-	if insertSessionErr := database.InsertSession(r.Context(), h.db, s); insertSessionErr != nil {
+	s := store.NewSession(t, userID, tokenExpiry)
+	if insertSessionErr := h.sessionStore.Insert(r.Context(), s); insertSessionErr != nil {
 		slog.ErrorContext(
 			r.Context(),
 			"Error when saving session token",
@@ -322,7 +324,7 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 
 func (h *HandlerGroupImpl) Dashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, _ := ctx.Value(userCtx{}).(*database.User)
+	user, _ := ctx.Value(userCtx{}).(*store.User)
 	dashboard := pages.Dashboard(user.FullName)
 	templ.Handler(dashboard).ServeHTTP(w, r)
 }
@@ -339,7 +341,7 @@ func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
 	}
-	if deleteErr := database.DeleteSession(r.Context(), h.db, c.Value); deleteErr != nil {
+	if deleteErr := h.sessionStore.Delete(r.Context(), c.Value); deleteErr != nil {
 		slog.ErrorContext(
 			r.Context(),
 			"Error when deleting cookie",

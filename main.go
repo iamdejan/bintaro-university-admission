@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bintaro-university-admission/internal/router"
+	"bintaro-university-admission/internal/store"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -50,8 +51,11 @@ func main() {
 		panic(err)
 	}
 
-	hg := router.NewHandlerGroup(db)
-	mg := router.NewMiddlewareGroup(db)
+	userStore := store.NewUserStore(db)
+	sessionStore := store.NewSessionStore(db)
+
+	hg := router.NewHandlerGroup(userStore, sessionStore)
+	mg := router.NewMiddlewareGroup(userStore, sessionStore)
 	r := router.NewRouter(hg, mg)
 	server := http.Server{
 		Handler:      r,

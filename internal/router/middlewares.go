@@ -2,13 +2,12 @@ package router
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log/slog"
 	"net/http"
 	"time"
 
-	"bintaro-university-admission/internal/database"
+	"bintaro-university-admission/internal/store"
 )
 
 type MiddlewareGroup interface {
@@ -16,12 +15,14 @@ type MiddlewareGroup interface {
 }
 
 type MiddlewareGroupImpl struct {
-	db *sql.DB
+	userStore    store.UserStore
+	sessionStore store.SessionStore
 }
 
-func NewMiddlewareGroup(db *sql.DB) MiddlewareGroup {
+func NewMiddlewareGroup(userStore store.UserStore, sessionStore store.SessionStore) MiddlewareGroup {
 	return &MiddlewareGroupImpl{
-		db: db,
+		userStore:    userStore,
+		sessionStore: sessionStore,
 	}
 }
 
@@ -54,7 +55,7 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 		}
 
 		sessionToken := c.Value
-		session, sessionErr := database.GetSession(r.Context(), m.db, sessionToken)
+		session, sessionErr := m.sessionStore.Get(r.Context(), sessionToken)
 		if sessionErr != nil {
 			slog.ErrorContext(
 				r.Context(),
@@ -69,7 +70,7 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 		if time.Now().After(session.ExpiryTime()) {
 			slog.ErrorContext(r.Context(), "Cookie expired", logKeyError, cookieErr)
 
-			if deleteSessionErr := database.DeleteSession(r.Context(), m.db, sessionToken); deleteSessionErr != nil {
+			if deleteSessionErr := m.sessionStore.Delete(r.Context(), sessionToken); deleteSessionErr != nil {
 				slog.ErrorContext(
 					r.Context(),
 					"Failed to delete session in database",
@@ -94,11 +95,11 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 			return
 		}
 
-		user, userErr := database.GetUserByID(r.Context(), m.db, session.UserID)
+		user, userErr := m.userStore.GetByID(r.Context(), session.UserID)
 		if userErr != nil {
 			slog.ErrorContext(r.Context(), "User does not exist", logKeyError, userErr)
 
-			if deleteSessionErr := database.DeleteSession(r.Context(), m.db, sessionToken); deleteSessionErr != nil {
+			if deleteSessionErr := m.sessionStore.Delete(r.Context(), sessionToken); deleteSessionErr != nil {
 				slog.ErrorContext(
 					r.Context(),
 					"Failed to delete session in database",
