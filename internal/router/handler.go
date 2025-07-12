@@ -2,6 +2,7 @@ package router
 
 import (
 	"database/sql"
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -240,6 +241,37 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 	email := r.FormValue("email")
 	nationality := r.FormValue("nationality")
 	userID := uuid.NewString()
+
+	existingUser, existingUserErr := database.GetUserByEmail(r.Context(), h.db, email)
+	if existingUserErr != nil && !errors.Is(existingUserErr, sql.ErrNoRows) {
+		slog.ErrorContext(
+			r.Context(),
+			"Failed to query existing user",
+			logKeyError,
+			existingUserErr,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	if existingUser != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"User already exists",
+		)
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "User already exists",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/register", http.StatusSeeOther)
+		return
+	}
 
 	createUserRequest := database.User{
 		ID:             userID,
