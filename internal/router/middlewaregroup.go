@@ -19,9 +19,8 @@ type MiddlewareGroup interface {
 }
 
 type MiddlewareGroupImpl struct {
-	userStore      store.UserStore
-	sessionStore   store.SessionStore
-	csrfTokenStore store.CSRFToken
+	userStore    store.UserStore
+	sessionStore store.SessionStore
 }
 
 func NewMiddlewareGroup(
@@ -150,6 +149,7 @@ func (m *MiddlewareGroupImpl) XSSProtected(next http.Handler) http.Handler {
 		w.Header().Set("X-Frame-Options", "DENY")
 
 		if _, need := methodsNeedSanitazion[r.Method]; need {
+			r.ParseForm()
 			for key, values := range r.Form {
 				sanitizedValues := make([]string, len(values))
 				for i, value := range values {
@@ -157,8 +157,9 @@ func (m *MiddlewareGroupImpl) XSSProtected(next http.Handler) http.Handler {
 				}
 				r.Form[key] = sanitizedValues
 			}
-			next.ServeHTTP(w, r)
 		}
+
+		next.ServeHTTP(w, r)
 	})
 }
 
