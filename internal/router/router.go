@@ -12,7 +12,7 @@ import (
 
 func NewRouter(hg HandlerGroup, mg MiddlewareGroup) http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(middleware.Logger, mg.XSSProtected, mg.SecurityHeaders)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		index := pages.Index()

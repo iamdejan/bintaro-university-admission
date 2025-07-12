@@ -2,26 +2,34 @@ package router
 
 import (
 	"context"
-	"database/sql"
 	"errors"
+	"html"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
-	"bintaro-university-admission/internal/database"
+	"bintaro-university-admission/internal/store"
 )
 
 type MiddlewareGroup interface {
 	Authenticated(next http.Handler) http.Handler
+	XSSProtected(next http.Handler) http.Handler
+	SecurityHeaders(next http.Handler) http.Handler
 }
 
 type MiddlewareGroupImpl struct {
-	db *sql.DB
+	userStore    store.UserStore
+	sessionStore store.SessionStore
 }
 
-func NewMiddlewareGroup(db *sql.DB) MiddlewareGroup {
+func NewMiddlewareGroup(
+	userStore store.UserStore,
+	sessionStore store.SessionStore,
+) MiddlewareGroup {
 	return &MiddlewareGroupImpl{
-		db: db,
+		userStore:    userStore,
+		sessionStore: sessionStore,
 	}
 }
 
@@ -54,7 +62,7 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 		}
 
 		sessionToken := c.Value
-		session, sessionErr := database.GetSession(r.Context(), m.db, sessionToken)
+		session, sessionErr := m.sessionStore.Get(r.Context(), sessionToken)
 		if sessionErr != nil {
 			slog.ErrorContext(
 				r.Context(),
@@ -69,7 +77,7 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 		if time.Now().After(session.ExpiryTime()) {
 			slog.ErrorContext(r.Context(), "Cookie expired", logKeyError, cookieErr)
 
-			if deleteSessionErr := database.DeleteSession(r.Context(), m.db, sessionToken); deleteSessionErr != nil {
+			if deleteSessionErr := m.sessionStore.Delete(r.Context(), sessionToken); deleteSessionErr != nil {
 				slog.ErrorContext(
 					r.Context(),
 					"Failed to delete session in database",
@@ -94,11 +102,11 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 			return
 		}
 
-		user, userErr := database.GetUserByID(r.Context(), m.db, session.UserID)
+		user, userErr := m.userStore.GetByID(r.Context(), session.UserID)
 		if userErr != nil {
 			slog.ErrorContext(r.Context(), "User does not exist", logKeyError, userErr)
 
-			if deleteSessionErr := database.DeleteSession(r.Context(), m.db, sessionToken); deleteSessionErr != nil {
+			if deleteSessionErr := m.sessionStore.Delete(r.Context(), sessionToken); deleteSessionErr != nil {
 				slog.ErrorContext(
 					r.Context(),
 					"Failed to delete session in database",
@@ -125,5 +133,51 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), userCtx{}, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+var methodsNeedSanitazion = map[string]struct{}{
+	http.MethodPost:   {},
+	http.MethodPut:    {},
+	http.MethodDelete: {},
+}
+
+func (m *MiddlewareGroupImpl) XSSProtected(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+
+		if _, need := methodsNeedSanitazion[r.Method]; need {
+			r.ParseForm()
+			for key, values := range r.Form {
+				sanitizedValues := make([]string, len(values))
+				for i, value := range values {
+					sanitizedValues[i] = html.EscapeString(strings.TrimSpace(value))
+				}
+				r.Form[key] = sanitizedValues
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (m *MiddlewareGroupImpl) SecurityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set comprehensive CSP header
+		csp := []string{
+			"default-src 'self'",
+			"script-src 'self' 'unsafe-inline'",
+			"style-src 'self' 'unsafe-inline'",
+			"img-src 'self' data: https:",
+			"connect-src 'self'",
+		}
+
+		w.Header().Set("Content-Security-Policy", strings.Join(csp, "; "))
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		w.Header().Set("Permissions-Policy", "geolocation=(), microphone=()")
+
+		next.ServeHTTP(w, r)
 	})
 }

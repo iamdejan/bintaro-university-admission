@@ -1,4 +1,4 @@
-package database
+package store
 
 import (
 	"context"
@@ -25,6 +25,24 @@ func (s Session) ExpiryTime() time.Time {
 	return t
 }
 
+type SessionStore interface {
+	Insert(ctx context.Context, session Session) error
+	Get(ctx context.Context, sessionToken string) (*Session, error)
+	Delete(ctx context.Context, sessionToken string) error
+}
+
+type SessionStoreImpl struct {
+	db *sql.DB
+}
+
+var _ SessionStore = (*SessionStoreImpl)(nil)
+
+func NewSessionStore(db *sql.DB) SessionStore {
+	return &SessionStoreImpl{
+		db: db,
+	}
+}
+
 const insertSessionSQLQuery = `
 INSERT INTO sessions(
 	session_token
@@ -37,8 +55,8 @@ INSERT INTO sessions(
 )
 `
 
-func InsertSession(ctx context.Context, db *sql.DB, session Session) error {
-	_, err := db.ExecContext(
+func (s *SessionStoreImpl) Insert(ctx context.Context, session Session) error {
+	_, err := s.db.ExecContext(
 		ctx,
 		insertSessionSQLQuery,
 		session.SessionToken,
@@ -55,8 +73,8 @@ FROM sessions
 WHERE session_token = $1
 `
 
-func GetSession(ctx context.Context, db *sql.DB, sessionToken string) (*Session, error) {
-	row := db.QueryRowContext(ctx, getSessionSQLQuery, sessionToken)
+func (s *SessionStoreImpl) Get(ctx context.Context, sessionToken string) (*Session, error) {
+	row := s.db.QueryRowContext(ctx, getSessionSQLQuery, sessionToken)
 
 	var userID string
 	var expiresAt string
@@ -76,7 +94,7 @@ DELETE FROM sessions
 WHERE session_token = $1
 `
 
-func DeleteSession(ctx context.Context, db *sql.DB, sessionToken string) error {
-	_, err := db.ExecContext(ctx, deleteSQLQuery, sessionToken)
+func (s *SessionStoreImpl) Delete(ctx context.Context, sessionToken string) error {
+	_, err := s.db.ExecContext(ctx, deleteSQLQuery, sessionToken)
 	return err
 }

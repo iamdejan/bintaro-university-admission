@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bintaro-university-admission/internal/router"
+	"bintaro-university-admission/internal/store"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -24,6 +25,11 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS sessions (
 	session_token VARCHAR(255) PRIMARY KEY,
 	user_id UUID,
+	expires_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS csrf_tokens (
+	token VARCHAR(255) PRIMARY KEY,
 	expires_at TIMESTAMPTZ
 );
 
@@ -50,8 +56,11 @@ func main() {
 		panic(err)
 	}
 
-	hg := router.NewHandlerGroup(db)
-	mg := router.NewMiddlewareGroup(db)
+	userStore := store.NewUserStore(db)
+	sessionStore := store.NewSessionStore(db)
+
+	hg := router.NewHandlerGroup(userStore, sessionStore)
+	mg := router.NewMiddlewareGroup(userStore, sessionStore)
 	r := router.NewRouter(hg, mg)
 	server := http.Server{
 		Handler:      r,
