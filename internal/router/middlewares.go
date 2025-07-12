@@ -19,7 +19,10 @@ type MiddlewareGroupImpl struct {
 	sessionStore store.SessionStore
 }
 
-func NewMiddlewareGroup(userStore store.UserStore, sessionStore store.SessionStore) MiddlewareGroup {
+func NewMiddlewareGroup(
+	userStore store.UserStore,
+	sessionStore store.SessionStore,
+) MiddlewareGroup {
 	return &MiddlewareGroupImpl{
 		userStore:    userStore,
 		sessionStore: sessionStore,

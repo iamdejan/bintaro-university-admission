@@ -16,6 +16,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const byteLength = 64
+
 type HandlerGroup interface {
 	Index(w http.ResponseWriter, r *http.Request)
 
@@ -88,7 +90,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	inputtedPassword := r.FormValue("password")
 
-	user, userErr := h.userStore.GetByID(r.Context(), email)
+	user, userErr := h.userStore.GetByEmail(r.Context(), email)
 	if userErr != nil {
 		slog.ErrorContext(
 			r.Context(),
@@ -97,8 +99,6 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 			userErr,
 			logKeyEmail,
 			email,
-			logKeyUserID,
-			user.ID,
 		)
 		errorMsgCookie := http.Cookie{
 			Name:     cookieNameErrorMessage,
@@ -139,7 +139,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := token.GenerateRandom(32)
+	token, err := token.GenerateRandom(byteLength)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
@@ -288,7 +288,7 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	t, err := token.GenerateRandom(32)
+	t, err := token.GenerateRandom(byteLength)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
