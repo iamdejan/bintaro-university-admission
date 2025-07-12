@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
 	"bintaro-university-admission/internal/database"
@@ -62,8 +61,18 @@ func (h *HandlerGroupImpl) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		slog.ErrorContext(r.Context(), "Fail to parse form", logKeyError, err)
-		os.Exit(1)
+		slog.WarnContext(r.Context(), "Fail to parse form", logKeyError, err)
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "Invalid form",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
 	}
 
 	email := r.FormValue("email")
@@ -71,19 +80,58 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 
 	user, userErr := database.GetUserByEmail(r.Context(), h.db, email)
 	if userErr != nil {
-		slog.ErrorContext(r.Context(), "User not found", logKeyError, userErr)
-		os.Exit(1)
+		slog.ErrorContext(
+			r.Context(),
+			"User not found",
+			logKeyError,
+			userErr,
+			logKeyEmail,
+			email,
+			logKeyUserID,
+			user.ID,
+		)
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "Wrong email / password",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
 	}
 
 	if err := password.Validate(user.HashedPassword, inputtedPassword); err != nil {
-		slog.ErrorContext(r.Context(), "Wrong password", logKeyError, err)
-		os.Exit(1)
+		slog.ErrorContext(
+			r.Context(),
+			"Wrong password",
+			logKeyError,
+			err,
+			logKeyEmail,
+			email,
+			logKeyUserID,
+			user.ID,
+		)
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "Wrong email / password",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
 	}
 
 	token, err := token.GenerateRandom(32)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
-		os.Exit(1)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
 	}
 
 	tokenExpiry := time.Now().Add(1 * time.Hour)
@@ -91,7 +139,8 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 	s := database.NewSession(token, user.ID, tokenExpiry)
 	if insertErr := database.InsertSession(r.Context(), h.db, s); insertErr != nil {
 		slog.ErrorContext(r.Context(), "Failed to insert session", logKeyError, err)
-		os.Exit(1)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
 	}
 
 	cookie := http.Cookie{
@@ -127,7 +176,17 @@ func (h *HandlerGroupImpl) Register(w http.ResponseWriter, r *http.Request) {
 func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		slog.ErrorContext(r.Context(), "Failed to parse form", logKeyError, err)
-		os.Exit(1)
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "You need to fill in all of the fields",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/register", http.StatusSeeOther)
+		return
 	}
 
 	pwd := r.FormValue("password")
@@ -135,7 +194,17 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 
 	if pwd != confirmPassword {
 		slog.ErrorContext(r.Context(), "Password is not confirmed")
-		os.Exit(1)
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "Password and Confirm Password must match",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/register", http.StatusSeeOther)
+		return
 	}
 
 	hashedPassword, hashedPasswordErr := password.Hash(pwd)
@@ -146,7 +215,8 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 			logKeyError,
 			hashedPasswordErr,
 		)
-		os.Exit(1)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
 	}
 
 	fullName := r.FormValue("fullName")
@@ -163,13 +233,15 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 	}
 	if insertError := database.InsertUser(r.Context(), h.db, createUserRequest); insertError != nil {
 		slog.ErrorContext(r.Context(), "Fail to register account", logKeyError, insertError)
-		os.Exit(1)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
 	}
 
 	t, err := token.GenerateRandom(32)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
-		os.Exit(1)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
 	}
 
 	tokenExpiry := time.Now().Add(1 * time.Hour)
@@ -182,7 +254,8 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 			logKeyError,
 			insertSessionErr,
 		)
-		os.Exit(1)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
 	}
 
 	cookie := http.Cookie{
@@ -214,7 +287,8 @@ func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {
 			logKeyError,
 			cookieErr,
 		)
-		os.Exit(1)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
 	}
 	if deleteErr := database.DeleteSession(r.Context(), h.db, c.Value); deleteErr != nil {
 		slog.ErrorContext(
@@ -223,7 +297,8 @@ func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {
 			logKeyError,
 			deleteErr,
 		)
-		os.Exit(1)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
 	}
 
 	cookie := http.Cookie{

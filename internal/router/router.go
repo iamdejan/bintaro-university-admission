@@ -21,6 +21,10 @@ func NewRouter(hg HandlerGroup, mg MiddlewareGroup) http.Handler {
 	r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./static/favicon.ico")
 	})
+	r.Get("/error", func(w http.ResponseWriter, r *http.Request) {
+		errorPage := pages.Error()
+		templ.Handler(errorPage).ServeHTTP(w, r)
+	})
 	r.Get("/login", hg.Login)
 	r.Post("/login", hg.PostLogin)
 	r.Get("/register", hg.Register)
