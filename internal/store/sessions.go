@@ -44,7 +44,12 @@ type Session struct {
 	expiresAt    string // expiresAt is a string representation of time. It should be formatted according to RFC3339 format.
 }
 
-func NewSession(sessionToken string, userID string, sessionType SessionType, expiryTime time.Time) Session {
+func NewSession(
+	sessionToken string,
+	userID string,
+	sessionType SessionType,
+	expiryTime time.Time,
+) Session {
 	return Session{
 		SessionToken: sessionToken,
 		UserID:       userID,
@@ -96,7 +101,7 @@ func (s *SessionStoreImpl) Insert(ctx context.Context, session Session) error {
 		insertSessionSQLQuery,
 		session.SessionToken,
 		session.UserID,
-		session.Type,
+		session.Type.String(),
 		session.expiresAt,
 	)
 	return err

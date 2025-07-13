@@ -458,7 +458,7 @@ templ TOTPSetup(props TOTPSetupProps) {
 					verifyBtn.textContent = "Verifying...";
 
 					const body = new URLSearchParams();
-					body.set("otp_token", otpCode);
+					body.set("otp_code", otpCode);
 					fetch("/totp-setup", {
 						method: "POST",
 						body: body,

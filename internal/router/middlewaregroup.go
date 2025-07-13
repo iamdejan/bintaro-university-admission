@@ -45,7 +45,7 @@ type userCtx struct{}
 func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authMiddlewareData, err := m.getUserBySessionToken(w, r)
-		if err == nil {
+		if err != nil {
 			return
 		}
 
@@ -70,7 +70,7 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userCtx{}, user)
+		ctx := context.WithValue(r.Context(), userCtx{}, &user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -78,7 +78,7 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 func (m *MiddlewareGroupImpl) OTPAllowed(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authMiddlewareData, err := m.getUserBySessionToken(w, r)
-		if err == nil {
+		if err != nil {
 			return
 		}
 
@@ -86,8 +86,15 @@ func (m *MiddlewareGroupImpl) OTPAllowed(next http.Handler) http.Handler {
 		user := authMiddlewareData.user
 
 		// only allow OTP token
-		if session.Type != store.SessionTypeGeneral {
-			slog.ErrorContext(r.Context(), "Wrong session type", logKeyUserID, user.ID)
+		if session.Type != store.SessionTypeOTP {
+			slog.ErrorContext(
+				r.Context(),
+				"Wrong session type",
+				logKeyUserID,
+				user.ID,
+				logKeySessionType,
+				session.Type,
+			)
 
 			errorMsgCookie := http.Cookie{
 				Name:     cookieNameErrorMessage,
@@ -103,12 +110,15 @@ func (m *MiddlewareGroupImpl) OTPAllowed(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userCtx{}, user)
+		ctx := context.WithValue(r.Context(), userCtx{}, &user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func (m *MiddlewareGroupImpl) getUserBySessionToken(w http.ResponseWriter, r *http.Request) (*authMiddlewareData, error) {
+func (m *MiddlewareGroupImpl) getUserBySessionToken(
+	w http.ResponseWriter,
+	r *http.Request,
+) (*authMiddlewareData, error) {
 	c, cookieErr := r.Cookie(cookieNameSessionToken)
 	if cookieErr != nil && errors.Is(cookieErr, http.ErrNoCookie) {
 		slog.ErrorContext(r.Context(), "Cookie not found in request", logKeyError, cookieErr)
