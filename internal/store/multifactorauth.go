@@ -103,6 +103,7 @@ func (m *MultiFactorAuthStoreImpl) GetSlugsByUserID(ctx context.Context, userID 
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	mfas := make([]string, 0)
 	for rows.Next() {
@@ -112,6 +113,10 @@ func (m *MultiFactorAuthStoreImpl) GetSlugsByUserID(ctx context.Context, userID 
 		}
 
 		mfas = append(mfas, slug)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return mfas, nil

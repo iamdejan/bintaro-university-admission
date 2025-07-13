@@ -149,7 +149,16 @@ func (m *MiddlewareGroupImpl) XSSProtected(next http.Handler) http.Handler {
 		w.Header().Set("X-Frame-Options", "DENY")
 
 		if _, need := methodsNeedSanitazion[r.Method]; need {
-			r.ParseForm()
+			if parseFormErr := r.ParseForm(); parseFormErr != nil {
+				slog.ErrorContext(
+					r.Context(),
+					"Failed to parse form",
+					logKeyError,
+					parseFormErr,
+				)
+				http.Redirect(w, r, "/error", http.StatusSeeOther)
+				return
+			}
 			for key, values := range r.Form {
 				sanitizedValues := make([]string, len(values))
 				for i, value := range values {
