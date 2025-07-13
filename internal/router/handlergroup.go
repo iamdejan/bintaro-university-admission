@@ -32,7 +32,10 @@ type HandlerGroup interface {
 	PostLogin(w http.ResponseWriter, r *http.Request)
 
 	Dashboard(w http.ResponseWriter, r *http.Request)
+
 	TOTPSetup(w http.ResponseWriter, r *http.Request)
+	PostTOTPSetup(w http.ResponseWriter, r *http.Request)
+	CancelTOTPSetup(w http.ResponseWriter, r *http.Request)
 
 	Logout(w http.ResponseWriter, r *http.Request)
 }
@@ -363,12 +366,39 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user, _ := ctx.Value(userCtx{}).(*store.User)
 
+	if err := h.mfaStore.DeleteByUserID(ctx, user.ID); err != nil &&
+		!errors.Is(err, sql.ErrNoRows) {
+		slog.ErrorContext(
+			ctx,
+			"Failed to delete MFA from database",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
 	secretBase32, _ := random.GenerateBase32(secretLength)
+	mfa := store.MultiFactorAuth{
+		ID:           uuid.NewString(),
+		UserID:       user.ID,
+		SecretBase32: secretBase32,
+	}
+	if err := h.mfaStore.Insert(ctx, mfa); err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Failed to insert MFA to database",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
 
 	qrCode, err := totp.GenerateQRCode(secretBase32, user.ID)
 	if err != nil {
 		slog.ErrorContext(
-			r.Context(),
+			ctx,
 			"Failed to generate QR code",
 			logKeyError,
 			err,
@@ -383,6 +413,29 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 	}
 	totpSetup := pages.TOTPSetup(props)
 	templ.Handler(totpSetup).ServeHTTP(w, r)
+}
+
+func (h *HandlerGroupImpl) PostTOTPSetup(w http.ResponseWriter, r *http.Request) {
+	// TODO dejan
+	panic("unimplemented")
+}
+
+func (h *HandlerGroupImpl) CancelTOTPSetup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, _ := ctx.Value(userCtx{}).(*store.User)
+
+	if err := h.mfaStore.DeleteByUserID(ctx, user.ID); err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Failed to delete MFA from database",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
 func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {

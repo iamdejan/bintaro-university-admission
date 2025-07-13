@@ -214,7 +214,6 @@ templ TOTPSetup(props TOTPSetupProps) {
 
 				.copy-btn {
 					position: absolute;
-					top: 0.5rem;
 					right: 0.5rem;
 					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 					color: white;
@@ -336,7 +335,7 @@ templ TOTPSetup(props TOTPSetupProps) {
 		<body>
 			<nav class="navbar">
 				<h1>Bintaro University Admission</h1>
-				<a href="#" class="back-btn" onclick="goBack()">
+				<a class="back-btn" onclick="goBack()">
 					← Back to Dashboard
 				</a>
 			</nav>
@@ -400,9 +399,12 @@ templ TOTPSetup(props TOTPSetupProps) {
 			<script>
 				function goBack() {
 					if (confirm("Are you sure you want to go back? Your 2FA setup will not be saved.")) {
-						// TODO dejan: delete OTP from database
-
-						window.history.back();
+						fetch("/totp-setup", {
+							method: "DELETE",
+							redirect: "follow"
+						}).then((response) => {
+							window.location.href = response.url;
+						});
 					}
 				}
 
@@ -457,19 +459,12 @@ templ TOTPSetup(props TOTPSetupProps) {
 
 					// Simulate API call
 					setTimeout(() => {
-						// TODO dejan: challenge the OTP against the server
-
-						// For demo purposes, accept any 6-digit code
-						// In real implementation, this would validate against the server
-						if (otpCode === "123456") {
-							alert("2FA has been successfully enabled for your account!\n\nYou will now be required to enter a code from your authenticator app when logging in.");
-							// Redirect to dashboard or settings page
-							window.location.href = "/dashboard";
-						} else {
-							alert("Invalid authentication code. Please try again.\n\nMake sure you're using the latest code from your authenticator app.");
-							verifyBtn.disabled = false;
-							verifyBtn.textContent = "Verify & Enable 2FA";
-						}
+						const formData = new FormData();
+						formData.set("otp", otpCode);
+						fetch("/totp-setup", {
+							method: "POST",
+							body: formData
+						});
 					}, 1500);
 				}
 
