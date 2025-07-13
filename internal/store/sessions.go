@@ -92,7 +92,12 @@ INSERT INTO sessions(
 	,$2
 	,$3
 	,$4
-)
+) ON CONFLICT (user_id)
+DO UPDATE SET
+session_token = $1
+,type = $3
+,expires_at = $4
+WHERE user_id = $2
 `
 
 func (s *SessionStoreImpl) Insert(ctx context.Context, session Session) error {

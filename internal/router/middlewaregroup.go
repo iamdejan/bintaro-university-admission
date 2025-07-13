@@ -177,7 +177,17 @@ func (m *MiddlewareGroupImpl) validateSessionByType(
 		return nil, errCookieExpired
 	}
 
-	// only allow general token
+	if userErr != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Failed to get user from database",
+			logKeyError,
+			userErr,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return nil, userErr
+	}
+
 	if session.Type != expectedSessionType {
 		slog.ErrorContext(
 			r.Context(),
@@ -202,7 +212,7 @@ func (m *MiddlewareGroupImpl) validateSessionByType(
 		return nil, errWrongSessionType
 	}
 
-	return context.WithValue(r.Context(), userCtx{}, &user), nil
+	return context.WithValue(r.Context(), userCtx{}, user), nil
 }
 
 var methodsNeedSanitazion = map[string]struct{}{
