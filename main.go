@@ -28,17 +28,14 @@ CREATE TABLE IF NOT EXISTS sessions (
 	expires_at TIMESTAMPTZ
 );
 
-CREATE TABLE IF NOT EXISTS csrf_tokens (
-	token VARCHAR(255) PRIMARY KEY,
-	expires_at TIMESTAMPTZ
-);
-
 CREATE TABLE IF NOT EXISTS multi_factor_auth (
 	id UUID PRIMARY KEY,
 	slug varchar(255) UNIQUE,
 	user_id UUID,
-	secret_base32 CHAR(26)
+	secret_base32 CHAR(32)
 );
+
+CREATE INDEX multi_factor_auth_user_id ON multi_factor_auth (user_id);
 `
 
 func main() {

@@ -9,14 +9,14 @@ import (
 
 	"bintaro-university-admission/internal/pages"
 	"bintaro-university-admission/internal/password"
+	"bintaro-university-admission/internal/random"
 	"bintaro-university-admission/internal/store"
-	"bintaro-university-admission/internal/token"
 
 	"github.com/a-h/templ"
 	"github.com/google/uuid"
 )
 
-const byteLength = 64
+const stringLength = 64
 
 type HandlerGroup interface {
 	Index(w http.ResponseWriter, r *http.Request)
@@ -139,7 +139,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := token.GenerateRandom(byteLength)
+	token, err := random.GenerateBase64(stringLength)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
@@ -288,7 +288,7 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	t, err := token.GenerateRandom(byteLength)
+	t, err := random.GenerateBase64(stringLength)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
