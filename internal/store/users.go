@@ -56,6 +56,7 @@ func (u *UserStoreImpl) GetByID(ctx context.Context, userID string) (*User, erro
 		ID:             userID,
 		FullName:       fullName,
 		Nationality:    nationality,
+		Email:          email,
 		HashedPassword: hashedPassword,
 	}, nil
 }

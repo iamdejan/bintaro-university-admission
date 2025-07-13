@@ -6,7 +6,8 @@ const (
 )
 
 const (
-	logKeyError  = "error"
-	logKeyEmail  = "email"
-	logKeyUserID = "user_id"
+	logKeyError       = "error"
+	logKeyEmail       = "email"
+	logKeyUserID      = "user_id"
+	logKeySessionType = "session_type"
 )
