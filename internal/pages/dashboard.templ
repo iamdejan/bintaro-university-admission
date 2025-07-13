@@ -1,6 +1,11 @@
 package pages
 
-templ Dashboard(fullName string) {
+type DashboardProps struct {
+	FullName     string
+	HasTOTPSetup bool
+}
+
+templ Dashboard(props DashboardProps) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -290,6 +295,11 @@ templ Dashboard(fullName string) {
 						<span></span>
 					</button>
 					<div class="dropdown" id="dropdown">
+						if !props.HasTOTPSetup {
+							<a href="/totp-setup" style="text-decoration: none; color: black;">
+								<div class="dropdown-item">Enable 2FA</div>
+							</a>
+						}
 						<div class="dropdown-item" onclick="logout()">Logout</div>
 					</div>
 				</div>
@@ -297,7 +307,7 @@ templ Dashboard(fullName string) {
 			<div class="main-content">
 				<div class="dashboard-container">
 					<div class="welcome-section">
-						<h2>Welcome, { fullName }</h2>
+						<h2>Welcome, { props.FullName }</h2>
 						<p>Track your admission progress and stay updated with important notifications.</p>
 					</div>
 					<div class="notifications-section">

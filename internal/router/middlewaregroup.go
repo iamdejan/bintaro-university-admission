@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"html"
 	"log/slog"
@@ -39,7 +40,7 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, cookieErr := r.Cookie(cookieNameSessionToken)
 		if cookieErr != nil && errors.Is(cookieErr, http.ErrNoCookie) {
-			slog.ErrorContext(r.Context(), "Cookie not found", logKeyError, cookieErr)
+			slog.ErrorContext(r.Context(), "Cookie not found in request", logKeyError, cookieErr)
 
 			errorMsgCookie := http.Cookie{
 				Name:     cookieNameErrorMessage,
@@ -63,10 +64,26 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 
 		sessionToken := c.Value
 		session, sessionErr := m.sessionStore.Get(r.Context(), sessionToken)
+		if sessionErr != nil && errors.Is(sessionErr, sql.ErrNoRows) {
+			slog.ErrorContext(r.Context(), "Cookie not found in database", logKeyError, cookieErr)
+
+			errorMsgCookie := http.Cookie{
+				Name:     cookieNameErrorMessage,
+				Value:    "Session expired. Please log in again.",
+				Expires:  time.Now().Add(10 * time.Minute),
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				Path:     "/",
+			}
+			http.SetCookie(w, &errorMsgCookie)
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
 		if sessionErr != nil {
 			slog.ErrorContext(
 				r.Context(),
-				"Failed to get session in database",
+				"Failed to get session in database:",
 				logKeyError,
 				sessionErr,
 			)

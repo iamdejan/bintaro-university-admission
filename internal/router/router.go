@@ -30,6 +30,7 @@ func NewRouter(hg HandlerGroup, mg MiddlewareGroup) http.Handler {
 	r.Get("/register", hg.Register)
 	r.Post("/register", hg.PostRegister)
 	r.With(mg.Authenticated).Get("/dashboard", hg.Dashboard)
+	r.With(mg.Authenticated).Get("/totp-setup", hg.TOTPSetup)
 	r.With(mg.Authenticated).Get("/logout", hg.Logout)
 
 	return r

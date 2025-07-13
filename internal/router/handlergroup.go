@@ -11,12 +11,16 @@ import (
 	"bintaro-university-admission/internal/password"
 	"bintaro-university-admission/internal/random"
 	"bintaro-university-admission/internal/store"
+	"bintaro-university-admission/internal/totp"
 
 	"github.com/a-h/templ"
 	"github.com/google/uuid"
 )
 
-const stringLength = 64
+const (
+	sessionTokenLength = 64
+	secretLength       = 32
+)
 
 type HandlerGroup interface {
 	Index(w http.ResponseWriter, r *http.Request)
@@ -28,18 +32,26 @@ type HandlerGroup interface {
 	PostLogin(w http.ResponseWriter, r *http.Request)
 
 	Dashboard(w http.ResponseWriter, r *http.Request)
+	TOTPSetup(w http.ResponseWriter, r *http.Request)
+
 	Logout(w http.ResponseWriter, r *http.Request)
 }
 
 type HandlerGroupImpl struct {
 	userStore    store.UserStore
 	sessionStore store.SessionStore
+	mfaStore     store.MultiFactorAuthStore
 }
 
-func NewHandlerGroup(userStore store.UserStore, sessionStore store.SessionStore) HandlerGroup {
+func NewHandlerGroup(
+	userStore store.UserStore,
+	sessionStore store.SessionStore,
+	mfaStore store.MultiFactorAuthStore,
+) HandlerGroup {
 	return &HandlerGroupImpl{
 		userStore:    userStore,
 		sessionStore: sessionStore,
+		mfaStore:     mfaStore,
 	}
 }
 
@@ -139,7 +151,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := random.GenerateBase64(stringLength)
+	token, err := random.GenerateBase64(sessionTokenLength)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
@@ -288,7 +300,7 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	t, err := random.GenerateBase64(stringLength)
+	t, err := random.GenerateBase64(sessionTokenLength)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
@@ -325,8 +337,52 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 func (h *HandlerGroupImpl) Dashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user, _ := ctx.Value(userCtx{}).(*store.User)
-	dashboard := pages.Dashboard(user.FullName)
+
+	props := pages.DashboardProps{
+		FullName: user.FullName,
+	}
+	_, err := h.mfaStore.GetByUserID(r.Context(), user.ID)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		props.HasTOTPSetup = false
+	} else if err != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Failed to get MFA from database",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	dashboard := pages.Dashboard(props)
 	templ.Handler(dashboard).ServeHTTP(w, r)
+}
+
+func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, _ := ctx.Value(userCtx{}).(*store.User)
+
+	secretBase32, _ := random.GenerateBase32(secretLength)
+
+	qrCode, err := totp.GenerateQRCode(secretBase32, user.ID)
+	if err != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Failed to generate QR code",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	props := pages.TOTPSetupProps{
+		QRCodeImageBase64: qrCode,
+		SecretBase32:      secretBase32,
+	}
+	totpSetup := pages.TOTPSetup(props)
+	templ.Handler(totpSetup).ServeHTTP(w, r)
 }
 
 func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {

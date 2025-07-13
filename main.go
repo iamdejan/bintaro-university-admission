@@ -30,12 +30,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE TABLE IF NOT EXISTS multi_factor_auth (
 	id UUID PRIMARY KEY,
-	slug varchar(255) UNIQUE,
 	user_id UUID,
 	secret_base32 CHAR(32)
 );
 
-CREATE INDEX multi_factor_auth_user_id ON multi_factor_auth (user_id);
+CREATE INDEX IF NOT EXISTS multi_factor_auth_user_id ON multi_factor_auth (user_id);
 `
 
 func main() {
@@ -55,8 +54,9 @@ func main() {
 
 	userStore := store.NewUserStore(db)
 	sessionStore := store.NewSessionStore(db)
+	mfaStore := store.NewMultiFactorAuthStore(db)
 
-	hg := router.NewHandlerGroup(userStore, sessionStore)
+	hg := router.NewHandlerGroup(userStore, sessionStore, mfaStore)
 	mg := router.NewMiddlewareGroup(userStore, sessionStore)
 	r := router.NewRouter(hg, mg)
 	server := http.Server{
