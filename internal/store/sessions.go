@@ -21,9 +21,9 @@ func (st SessionType) String() string {
 		return "GENERAL"
 	case SessionTypeOTP:
 		return "OTP"
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func SessionTypeFromString(s string) (SessionType, error) {
@@ -32,9 +32,9 @@ func SessionTypeFromString(s string) (SessionType, error) {
 		return SessionTypeGeneral, nil
 	case "OTP":
 		return SessionTypeOTP, nil
+	default:
+		return SessionTypeUnknown, errors.New("unknown enum")
 	}
-
-	return SessionTypeUnknown, errors.New("unknown enum")
 }
 
 type Session struct {

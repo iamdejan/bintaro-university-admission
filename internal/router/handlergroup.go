@@ -240,117 +240,7 @@ func (h *HandlerGroupImpl) ValidateOTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HandlerGroupImpl) PostValidateOTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	user, _ := ctx.Value(userCtx{}).(*store.User)
-
-	mfa, err := h.mfaStore.GetByUserID(ctx, user.ID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			slog.ErrorContext(
-				ctx,
-				"MFA isn't setup for this account",
-				logKeyError,
-				err,
-				logKeyUserID,
-				user.ID,
-			)
-
-			http.Redirect(w, r, "/totp-setup", http.StatusSeeOther)
-			return
-		}
-
-		slog.ErrorContext(
-			ctx,
-			"Failed to get MFA from database",
-			logKeyError,
-			err,
-			logKeyUserID,
-			user.ID,
-		)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	if err = r.ParseForm(); err != nil {
-		slog.WarnContext(r.Context(), "Fail to parse form", logKeyError, err, logKeyUserID, user.ID)
-		errorMsgCookie := http.Cookie{
-			Name:     cookieNameErrorMessage,
-			Value:    "Invalid form",
-			Expires:  time.Now().Add(10 * time.Minute),
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			Path:     "/",
-		}
-		http.SetCookie(w, &errorMsgCookie)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	inputtedOTPToken := r.Form["otp_code"][0]
-	validOTPTokens, generateOTPErr := totp.GenerateOTPTokens(mfa.SecretBase32)
-	if generateOTPErr != nil {
-		slog.ErrorContext(
-			r.Context(),
-			"Fail to generate OTP",
-			logKeyError,
-			generateOTPErr,
-			logKeyUserID,
-			user.ID,
-		)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	isValid := false
-	for _, token := range validOTPTokens {
-		if token == inputtedOTPToken {
-			isValid = true
-			break
-		}
-	}
-	if !isValid {
-		errorMsgCookie := http.Cookie{
-			Name:     cookieNameErrorMessage,
-			Value:    "Invalid OTP",
-			Expires:  time.Now().Add(10 * time.Minute),
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			Path:     "/",
-		}
-		http.SetCookie(w, &errorMsgCookie)
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	token, err := random.GenerateBase64(sessionTokenLength)
-	if err != nil {
-		slog.ErrorContext(ctx, "Error on token generation", logKeyError, err)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	tokenExpiry := time.Now().Add(1 * time.Hour)
-
-	s := store.NewSession(token, user.ID, store.SessionTypeGeneral, tokenExpiry)
-	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
-		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	cookie := http.Cookie{
-		Name:     cookieNameSessionToken,
-		Value:    token,
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  tokenExpiry,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	}
-	http.SetCookie(w, &cookie)
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	h.validateOTP(w, r, "/login")
 }
 
 func (h *HandlerGroupImpl) Register(w http.ResponseWriter, r *http.Request) {
@@ -613,6 +503,10 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HandlerGroupImpl) PostTOTPSetup(w http.ResponseWriter, r *http.Request) {
+	h.validateOTP(w, r, "/totp-setup")
+}
+
+func (h *HandlerGroupImpl) validateOTP(w http.ResponseWriter, r *http.Request, redirectURLIfInvalid string) {
 	ctx := r.Context()
 	user, _ := ctx.Value(userCtx{}).(*store.User)
 
@@ -693,7 +587,7 @@ func (h *HandlerGroupImpl) PostTOTPSetup(w http.ResponseWriter, r *http.Request)
 			Path:     "/",
 		}
 		http.SetCookie(w, &errorMsgCookie)
-		http.Redirect(w, r, "/totp-setup", http.StatusSeeOther)
+		http.Redirect(w, r, redirectURLIfInvalid, http.StatusSeeOther)
 		return
 	}
 

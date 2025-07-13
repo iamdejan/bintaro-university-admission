@@ -13,10 +13,10 @@ import (
 	"bintaro-university-admission/internal/store"
 )
 
-type authMiddlewareData struct {
-	session store.Session
-	user    store.User
-}
+var (
+	errWrongSessionType = errors.New("wrong session type")
+	errCookieExpired    = errors.New("cookie expired")
+)
 
 type MiddlewareGroup interface {
 	Authenticated(next http.Handler) http.Handler
@@ -44,88 +44,29 @@ type userCtx struct{}
 
 func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authMiddlewareData, err := m.getUserBySessionToken(w, r)
+		ctx, err := m.validateSessionByType(w, r, store.SessionTypeGeneral)
 		if err != nil {
 			return
 		}
-
-		session := authMiddlewareData.session
-		user := authMiddlewareData.user
-
-		// only allow general token
-		if session.Type != store.SessionTypeGeneral {
-			slog.ErrorContext(
-				r.Context(),
-				"Wrong session type",
-				logKeyUserID,
-				user.ID,
-				logKeySessionType,
-				session.Type,
-			)
-
-			errorMsgCookie := http.Cookie{
-				Name:     cookieNameErrorMessage,
-				Value:    "Session expired. Please log in again.",
-				Expires:  time.Now().Add(10 * time.Minute),
-				HttpOnly: true,
-				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
-				Path:     "/",
-			}
-			http.SetCookie(w, &errorMsgCookie)
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), userCtx{}, &user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func (m *MiddlewareGroupImpl) OTPAllowed(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authMiddlewareData, err := m.getUserBySessionToken(w, r)
+		ctx, err := m.validateSessionByType(w, r, store.SessionTypeOTP)
 		if err != nil {
 			return
 		}
-
-		session := authMiddlewareData.session
-		user := authMiddlewareData.user
-
-		// only allow OTP token
-		if session.Type != store.SessionTypeOTP {
-			slog.ErrorContext(
-				r.Context(),
-				"Wrong session type",
-				logKeyUserID,
-				user.ID,
-				logKeySessionType,
-				session.Type,
-			)
-
-			errorMsgCookie := http.Cookie{
-				Name:     cookieNameErrorMessage,
-				Value:    "Session expired. Please log in again.",
-				Expires:  time.Now().Add(10 * time.Minute),
-				HttpOnly: true,
-				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
-				Path:     "/",
-			}
-			http.SetCookie(w, &errorMsgCookie)
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), userCtx{}, &user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func (m *MiddlewareGroupImpl) getUserBySessionToken(
+func (m *MiddlewareGroupImpl) validateSessionByType(
 	w http.ResponseWriter,
 	r *http.Request,
-) (*authMiddlewareData, error) {
+	expectedSessionType store.SessionType,
+) (context.Context, error) {
 	c, cookieErr := r.Cookie(cookieNameSessionToken)
 	if cookieErr != nil && errors.Is(cookieErr, http.ErrNoCookie) {
 		slog.ErrorContext(r.Context(), "Cookie not found in request", logKeyError, cookieErr)
@@ -204,7 +145,7 @@ func (m *MiddlewareGroupImpl) getUserBySessionToken(
 		}
 		http.SetCookie(w, &errorMsgCookie)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return nil, errors.New("cookie expired")
+		return nil, errCookieExpired
 	}
 
 	user, userErr := m.userStore.GetByID(r.Context(), session.UserID)
@@ -233,13 +174,35 @@ func (m *MiddlewareGroupImpl) getUserBySessionToken(
 		}
 		http.SetCookie(w, &errorMsgCookie)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return nil, errors.New("cookie expired")
+		return nil, errCookieExpired
 	}
 
-	return &authMiddlewareData{
-		session: *session,
-		user:    *user,
-	}, nil
+	// only allow general token
+	if session.Type != expectedSessionType {
+		slog.ErrorContext(
+			r.Context(),
+			"Wrong session type",
+			logKeyUserID,
+			user.ID,
+			logKeySessionType,
+			session.Type,
+		)
+
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "Session expired. Please log in again.",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return nil, errWrongSessionType
+	}
+
+	return context.WithValue(r.Context(), userCtx{}, &user), nil
 }
 
 var methodsNeedSanitazion = map[string]struct{}{
