@@ -1,0 +1,209 @@
+package router
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"html"
+	"log/slog"
+	"net/http"
+	"strings"
+	"time"
+
+	"bintaro-university-admission/internal/store"
+)
+
+type MiddlewareGroup interface {
+	Authenticated(next http.Handler) http.Handler
+	XSSProtected(next http.Handler) http.Handler
+	SecurityHeaders(next http.Handler) http.Handler
+}
+
+type MiddlewareGroupImpl struct {
+	userStore    store.UserStore
+	sessionStore store.SessionStore
+}
+
+func NewMiddlewareGroup(
+	userStore store.UserStore,
+	sessionStore store.SessionStore,
+) MiddlewareGroup {
+	return &MiddlewareGroupImpl{
+		userStore:    userStore,
+		sessionStore: sessionStore,
+	}
+}
+
+type userCtx struct{}
+
+func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c, cookieErr := r.Cookie(cookieNameSessionToken)
+		if cookieErr != nil && errors.Is(cookieErr, http.ErrNoCookie) {
+			slog.ErrorContext(r.Context(), "Cookie not found in request", logKeyError, cookieErr)
+
+			errorMsgCookie := http.Cookie{
+				Name:     cookieNameErrorMessage,
+				Value:    "Session expired. Please log in again.",
+				Expires:  time.Now().Add(10 * time.Minute),
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				Path:     "/",
+			}
+			http.SetCookie(w, &errorMsgCookie)
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		if cookieErr != nil {
+			slog.ErrorContext(r.Context(), "Cookie error", logKeyError, cookieErr)
+			http.Redirect(w, r, "/error", http.StatusSeeOther)
+			return
+		}
+
+		sessionToken := c.Value
+		session, sessionErr := m.sessionStore.Get(r.Context(), sessionToken)
+		if sessionErr != nil && errors.Is(sessionErr, sql.ErrNoRows) {
+			slog.ErrorContext(r.Context(), "Cookie not found in database", logKeyError, sessionErr)
+
+			errorMsgCookie := http.Cookie{
+				Name:     cookieNameErrorMessage,
+				Value:    "Session expired. Please log in again.",
+				Expires:  time.Now().Add(10 * time.Minute),
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				Path:     "/",
+			}
+			http.SetCookie(w, &errorMsgCookie)
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		if sessionErr != nil {
+			slog.ErrorContext(
+				r.Context(),
+				"Failed to get session in database:",
+				logKeyError,
+				sessionErr,
+			)
+			http.Redirect(w, r, "/error", http.StatusSeeOther)
+			return
+		}
+
+		if time.Now().After(session.ExpiryTime()) {
+			slog.ErrorContext(r.Context(), "Cookie expired", logKeyError, cookieErr)
+
+			if deleteSessionErr := m.sessionStore.Delete(r.Context(), sessionToken); deleteSessionErr != nil {
+				slog.ErrorContext(
+					r.Context(),
+					"Failed to delete session in database",
+					logKeyError,
+					deleteSessionErr,
+				)
+				http.Redirect(w, r, "/error", http.StatusSeeOther)
+				return
+			}
+
+			errorMsgCookie := http.Cookie{
+				Name:     cookieNameErrorMessage,
+				Value:    "Session expired. Please log in again.",
+				Expires:  time.Now().Add(10 * time.Minute),
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				Path:     "/",
+			}
+			http.SetCookie(w, &errorMsgCookie)
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		user, userErr := m.userStore.GetByID(r.Context(), session.UserID)
+		if userErr != nil {
+			slog.ErrorContext(r.Context(), "User does not exist", logKeyError, userErr)
+
+			if deleteSessionErr := m.sessionStore.Delete(r.Context(), sessionToken); deleteSessionErr != nil {
+				slog.ErrorContext(
+					r.Context(),
+					"Failed to delete session in database",
+					logKeyError,
+					deleteSessionErr,
+				)
+				http.Redirect(w, r, "/error", http.StatusSeeOther)
+				return
+			}
+
+			errorMsgCookie := http.Cookie{
+				Name:     cookieNameErrorMessage,
+				Value:    "Session expired. Please log in again.",
+				Expires:  time.Now().Add(10 * time.Minute),
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				Path:     "/",
+			}
+			http.SetCookie(w, &errorMsgCookie)
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), userCtx{}, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+var methodsNeedSanitazion = map[string]struct{}{
+	http.MethodPost:   {},
+	http.MethodPut:    {},
+	http.MethodDelete: {},
+}
+
+func (m *MiddlewareGroupImpl) XSSProtected(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+
+		if _, need := methodsNeedSanitazion[r.Method]; need {
+			if parseFormErr := r.ParseForm(); parseFormErr != nil {
+				slog.ErrorContext(
+					r.Context(),
+					"Failed to parse form",
+					logKeyError,
+					parseFormErr,
+				)
+				http.Redirect(w, r, "/error", http.StatusSeeOther)
+				return
+			}
+			for key, values := range r.Form {
+				sanitizedValues := make([]string, len(values))
+				for i, value := range values {
+					sanitizedValues[i] = html.EscapeString(strings.TrimSpace(value))
+				}
+				r.Form[key] = sanitizedValues
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (m *MiddlewareGroupImpl) SecurityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set comprehensive CSP header
+		csp := []string{
+			"default-src 'self'",
+			"script-src 'self' 'unsafe-inline'",
+			"style-src 'self' 'unsafe-inline'",
+			"img-src 'self' data: https:",
+			"connect-src 'self'",
+		}
+
+		w.Header().Set("Content-Security-Policy", strings.Join(csp, "; "))
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		w.Header().Set("Permissions-Policy", "geolocation=(), microphone=()")
+
+		next.ServeHTTP(w, r)
+	})
+}

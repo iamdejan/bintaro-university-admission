@@ -7,13 +7,19 @@ import (
 	"net/http"
 	"time"
 
-	"bintaro-university-admission/internal/database"
 	"bintaro-university-admission/internal/pages"
 	"bintaro-university-admission/internal/password"
-	"bintaro-university-admission/internal/token"
+	"bintaro-university-admission/internal/random"
+	"bintaro-university-admission/internal/store"
+	"bintaro-university-admission/internal/totp"
 
 	"github.com/a-h/templ"
 	"github.com/google/uuid"
+)
+
+const (
+	sessionTokenLength = 64
+	secretLength       = 32
 )
 
 type HandlerGroup interface {
@@ -26,16 +32,29 @@ type HandlerGroup interface {
 	PostLogin(w http.ResponseWriter, r *http.Request)
 
 	Dashboard(w http.ResponseWriter, r *http.Request)
+
+	TOTPSetup(w http.ResponseWriter, r *http.Request)
+	PostTOTPSetup(w http.ResponseWriter, r *http.Request)
+	CancelTOTPSetup(w http.ResponseWriter, r *http.Request)
+
 	Logout(w http.ResponseWriter, r *http.Request)
 }
 
 type HandlerGroupImpl struct {
-	db *sql.DB
+	userStore    store.UserStore
+	sessionStore store.SessionStore
+	mfaStore     store.MultiFactorAuthStore
 }
 
-func NewHandlerGroup(db *sql.DB) HandlerGroup {
+func NewHandlerGroup(
+	userStore store.UserStore,
+	sessionStore store.SessionStore,
+	mfaStore store.MultiFactorAuthStore,
+) HandlerGroup {
 	return &HandlerGroupImpl{
-		db: db,
+		userStore:    userStore,
+		sessionStore: sessionStore,
+		mfaStore:     mfaStore,
 	}
 }
 
@@ -86,7 +105,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	inputtedPassword := r.FormValue("password")
 
-	user, userErr := database.GetUserByEmail(r.Context(), h.db, email)
+	user, userErr := h.userStore.GetByEmail(r.Context(), email)
 	if userErr != nil {
 		slog.ErrorContext(
 			r.Context(),
@@ -95,8 +114,6 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 			userErr,
 			logKeyEmail,
 			email,
-			logKeyUserID,
-			user.ID,
 		)
 		errorMsgCookie := http.Cookie{
 			Name:     cookieNameErrorMessage,
@@ -137,7 +154,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := token.GenerateRandom(32)
+	token, err := random.GenerateBase64(sessionTokenLength)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
@@ -146,8 +163,8 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 
 	tokenExpiry := time.Now().Add(1 * time.Hour)
 
-	s := database.NewSession(token, user.ID, tokenExpiry)
-	if insertErr := database.InsertSession(r.Context(), h.db, s); insertErr != nil {
+	s := store.NewSession(token, user.ID, tokenExpiry)
+	if insertErr := h.sessionStore.Insert(r.Context(), s); insertErr != nil {
 		slog.ErrorContext(r.Context(), "Failed to insert session", logKeyError, insertErr)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
@@ -242,7 +259,7 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 	nationality := r.FormValue("nationality")
 	userID := uuid.NewString()
 
-	existingUser, existingUserErr := database.GetUserByEmail(r.Context(), h.db, email)
+	existingUser, existingUserErr := h.userStore.GetByEmail(r.Context(), email)
 	if existingUserErr != nil && !errors.Is(existingUserErr, sql.ErrNoRows) {
 		slog.ErrorContext(
 			r.Context(),
@@ -273,20 +290,20 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	createUserRequest := database.User{
+	createUserRequest := store.User{
 		ID:             userID,
 		FullName:       fullName,
 		Nationality:    nationality,
 		Email:          email,
 		HashedPassword: hashedPassword,
 	}
-	if insertError := database.InsertUser(r.Context(), h.db, createUserRequest); insertError != nil {
+	if insertError := h.userStore.Insert(r.Context(), createUserRequest); insertError != nil {
 		slog.ErrorContext(r.Context(), "Fail to register account", logKeyError, insertError)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
 	}
 
-	t, err := token.GenerateRandom(32)
+	t, err := random.GenerateBase64(sessionTokenLength)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
@@ -295,8 +312,8 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 
 	tokenExpiry := time.Now().Add(1 * time.Hour)
 
-	s := database.NewSession(t, userID, tokenExpiry)
-	if insertSessionErr := database.InsertSession(r.Context(), h.db, s); insertSessionErr != nil {
+	s := store.NewSession(t, userID, tokenExpiry)
+	if insertSessionErr := h.sessionStore.Insert(r.Context(), s); insertSessionErr != nil {
 		slog.ErrorContext(
 			r.Context(),
 			"Error when saving session token",
@@ -322,9 +339,189 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 
 func (h *HandlerGroupImpl) Dashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, _ := ctx.Value(userCtx{}).(*database.User)
-	dashboard := pages.Dashboard(user.FullName)
+	user, _ := ctx.Value(userCtx{}).(*store.User)
+
+	props := pages.DashboardProps{
+		FullName: user.FullName,
+	}
+	mfa, err := h.mfaStore.GetByUserID(r.Context(), user.ID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		slog.ErrorContext(
+			r.Context(),
+			"Failed to get MFA from database",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	if mfa != nil {
+		props.HasTOTPSetup = true
+	}
+	dashboard := pages.Dashboard(props)
 	templ.Handler(dashboard).ServeHTTP(w, r)
+}
+
+func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, _ := ctx.Value(userCtx{}).(*store.User)
+
+	if err := h.mfaStore.DeleteByUserID(ctx, user.ID); err != nil &&
+		!errors.Is(err, sql.ErrNoRows) {
+		slog.ErrorContext(
+			ctx,
+			"Failed to delete MFA from database",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	secretBase32, _ := random.GenerateBase32(secretLength)
+	mfa := store.MultiFactorAuth{
+		ID:           uuid.NewString(),
+		UserID:       user.ID,
+		SecretBase32: secretBase32,
+	}
+	if err := h.mfaStore.Insert(ctx, mfa); err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Failed to insert MFA to database",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	qrCode, err := totp.GenerateQRCode(secretBase32, user.ID)
+	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Failed to generate QR code",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	props := pages.TOTPSetupProps{
+		QRCodeImageBase64: qrCode,
+		SecretBase32:      secretBase32,
+	}
+	totpSetup := pages.TOTPSetup(props)
+	templ.Handler(totpSetup).ServeHTTP(w, r)
+}
+
+func (h *HandlerGroupImpl) PostTOTPSetup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, _ := ctx.Value(userCtx{}).(*store.User)
+
+	mfa, err := h.mfaStore.GetByUserID(ctx, user.ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.ErrorContext(
+				ctx,
+				"MFA isn't setup for this account",
+				logKeyError,
+				err,
+				logKeyUserID,
+				user.ID,
+			)
+
+			http.Redirect(w, r, "/totp-setup", http.StatusSeeOther)
+			return
+		}
+
+		slog.ErrorContext(
+			ctx,
+			"Failed to get MFA from database",
+			logKeyError,
+			err,
+			logKeyUserID,
+			user.ID,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	if err = r.ParseForm(); err != nil {
+		slog.WarnContext(r.Context(), "Fail to parse form", logKeyError, err, logKeyUserID, user.ID)
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "Invalid form",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	slog.InfoContext(ctx, "Form data", "form_data", r.Form)
+
+	inputtedOTPToken := r.Form["otp_token"][0]
+	validOTPTokens, generateOTPErr := totp.GenerateOTPTokens(mfa.SecretBase32)
+	if generateOTPErr != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Fail to generate OTP",
+			logKeyError,
+			generateOTPErr,
+			logKeyUserID,
+			user.ID,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	isValid := false
+	for _, token := range validOTPTokens {
+		if token == inputtedOTPToken {
+			isValid = true
+			break
+		}
+	}
+	if !isValid {
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "Invalid OTP",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/totp-setup", http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+}
+
+func (h *HandlerGroupImpl) CancelTOTPSetup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, _ := ctx.Value(userCtx{}).(*store.User)
+
+	if err := h.mfaStore.DeleteByUserID(ctx, user.ID); err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Failed to delete MFA from database",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
 func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {
@@ -339,7 +536,7 @@ func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
 	}
-	if deleteErr := database.DeleteSession(r.Context(), h.db, c.Value); deleteErr != nil {
+	if deleteErr := h.sessionStore.Delete(r.Context(), c.Value); deleteErr != nil {
 		slog.ErrorContext(
 			r.Context(),
 			"Error when deleting cookie",

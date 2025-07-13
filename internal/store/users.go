@@ -1,4 +1,4 @@
-package database
+package store
 
 import (
 	"context"
@@ -13,6 +13,24 @@ type User struct {
 	HashedPassword string
 }
 
+type UserStore interface {
+	GetByID(ctx context.Context, userID string) (*User, error)
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	Insert(ctx context.Context, user User) error
+}
+
+type UserStoreImpl struct {
+	db *sql.DB
+}
+
+var _ UserStore = (*UserStoreImpl)(nil)
+
+func NewUserStore(db *sql.DB) UserStore {
+	return &UserStoreImpl{
+		db: db,
+	}
+}
+
 const getUserByIDSQLQuery = `
 SELECT id
 ,full_name
@@ -23,8 +41,8 @@ FROM users
 WHERE id = $1
 `
 
-func GetUserByID(ctx context.Context, db *sql.DB, userID string) (*User, error) {
-	row := db.QueryRowContext(ctx, getUserByIDSQLQuery, userID)
+func (u *UserStoreImpl) GetByID(ctx context.Context, userID string) (*User, error) {
+	row := u.db.QueryRowContext(ctx, getUserByIDSQLQuery, userID)
 
 	var fullName string
 	var nationality string
@@ -52,8 +70,8 @@ FROM users
 WHERE email = $1
 `
 
-func GetUserByEmail(ctx context.Context, db *sql.DB, email string) (*User, error) {
-	row := db.QueryRowContext(ctx, getUserByEmailSQLQuery, email)
+func (u *UserStoreImpl) GetByEmail(ctx context.Context, email string) (*User, error) {
+	row := u.db.QueryRowContext(ctx, getUserByEmailSQLQuery, email)
 	var userID string
 	var fullName string
 	var nationality string
@@ -87,8 +105,8 @@ INSERT INTO users (
 );
 `
 
-func InsertUser(ctx context.Context, db *sql.DB, user User) error {
-	_, err := db.ExecContext(
+func (u *UserStoreImpl) Insert(ctx context.Context, user User) error {
+	_, err := u.db.ExecContext(
 		ctx,
 		insertUserSQLQuery,
 		user.ID,

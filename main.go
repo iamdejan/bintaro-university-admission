@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bintaro-university-admission/internal/router"
+	"bintaro-university-admission/internal/store"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -29,10 +30,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE TABLE IF NOT EXISTS multi_factor_auth (
 	id UUID PRIMARY KEY,
-	slug varchar(255) UNIQUE,
 	user_id UUID,
-	secret_base32 CHAR(26)
+	secret_base32 CHAR(32)
 );
+
+CREATE INDEX IF NOT EXISTS multi_factor_auth_user_id ON multi_factor_auth (user_id);
 `
 
 func main() {
@@ -50,8 +52,12 @@ func main() {
 		panic(err)
 	}
 
-	hg := router.NewHandlerGroup(db)
-	mg := router.NewMiddlewareGroup(db)
+	userStore := store.NewUserStore(db)
+	sessionStore := store.NewSessionStore(db)
+	mfaStore := store.NewMultiFactorAuthStore(db)
+
+	hg := router.NewHandlerGroup(userStore, sessionStore, mfaStore)
+	mg := router.NewMiddlewareGroup(userStore, sessionStore)
 	r := router.NewRouter(hg, mg)
 	server := http.Server{
 		Handler:      r,
