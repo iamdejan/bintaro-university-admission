@@ -457,15 +457,15 @@ templ TOTPSetup(props TOTPSetupProps) {
 					verifyBtn.disabled = true;
 					verifyBtn.textContent = "Verifying...";
 
-					// Simulate API call
-					setTimeout(() => {
-						const formData = new FormData();
-						formData.set("otp", otpCode);
-						fetch("/totp-setup", {
-							method: "POST",
-							body: formData
-						});
-					}, 1500);
+					const body = new URLSearchParams();
+					body.set("otp_token", otpCode);
+					fetch("/totp-setup", {
+						method: "POST",
+						body: body,
+
+					}).then((response) => {
+						window.location.href = response.url;
+					});
 				}
 
 				// Handle Enter key press in OTP input

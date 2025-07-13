@@ -344,10 +344,8 @@ func (h *HandlerGroupImpl) Dashboard(w http.ResponseWriter, r *http.Request) {
 	props := pages.DashboardProps{
 		FullName: user.FullName,
 	}
-	_, err := h.mfaStore.GetByUserID(r.Context(), user.ID)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		props.HasTOTPSetup = false
-	} else if err != nil {
+	mfa, err := h.mfaStore.GetByUserID(r.Context(), user.ID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		slog.ErrorContext(
 			r.Context(),
 			"Failed to get MFA from database",
@@ -358,6 +356,9 @@ func (h *HandlerGroupImpl) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if mfa != nil {
+		props.HasTOTPSetup = true
+	}
 	dashboard := pages.Dashboard(props)
 	templ.Handler(dashboard).ServeHTTP(w, r)
 }
@@ -416,8 +417,93 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HandlerGroupImpl) PostTOTPSetup(w http.ResponseWriter, r *http.Request) {
-	// TODO dejan
-	panic("unimplemented")
+	ctx := r.Context()
+	user, _ := ctx.Value(userCtx{}).(*store.User)
+
+	mfa, err := h.mfaStore.GetByUserID(ctx, user.ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.ErrorContext(
+				ctx,
+				"MFA isn't setup for this account",
+				logKeyError,
+				err,
+				logKeyUserID,
+				user.ID,
+			)
+
+			http.Redirect(w, r, "/totp-setup", http.StatusSeeOther)
+			return
+		}
+
+		slog.ErrorContext(
+			ctx,
+			"Failed to get MFA from database",
+			logKeyError,
+			err,
+			logKeyUserID,
+			user.ID,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	if err = r.ParseForm(); err != nil {
+		slog.WarnContext(r.Context(), "Fail to parse form", logKeyError, err, logKeyUserID, user.ID)
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "Invalid form",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	slog.InfoContext(ctx, "Form data", "form_data", r.Form)
+
+	inputtedOTPToken := r.Form["otp_token"][0]
+	validOTPTokens, generateOTPErr := totp.GenerateOTPTokens(mfa.SecretBase32)
+	if generateOTPErr != nil {
+		slog.ErrorContext(
+			r.Context(),
+			"Fail to generate OTP",
+			logKeyError,
+			generateOTPErr,
+			logKeyUserID,
+			user.ID,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	isValid := false
+	for _, token := range validOTPTokens {
+		if token == inputtedOTPToken {
+			isValid = true
+			break
+		}
+	}
+	if !isValid {
+		errorMsgCookie := http.Cookie{
+			Name:     cookieNameErrorMessage,
+			Value:    "Invalid OTP",
+			Expires:  time.Now().Add(10 * time.Minute),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		}
+		http.SetCookie(w, &errorMsgCookie)
+		http.Redirect(w, r, "/totp-setup", http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
 func (h *HandlerGroupImpl) CancelTOTPSetup(w http.ResponseWriter, r *http.Request) {

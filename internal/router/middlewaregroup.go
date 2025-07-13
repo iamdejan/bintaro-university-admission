@@ -65,7 +65,7 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 		sessionToken := c.Value
 		session, sessionErr := m.sessionStore.Get(r.Context(), sessionToken)
 		if sessionErr != nil && errors.Is(sessionErr, sql.ErrNoRows) {
-			slog.ErrorContext(r.Context(), "Cookie not found in database", logKeyError, cookieErr)
+			slog.ErrorContext(r.Context(), "Cookie not found in database", logKeyError, sessionErr)
 
 			errorMsgCookie := http.Cookie{
 				Name:     cookieNameErrorMessage,

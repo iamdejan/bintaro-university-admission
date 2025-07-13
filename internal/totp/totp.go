@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"strconv"
 
 	qrcode "github.com/skip2/go-qrcode"
 )
@@ -29,23 +30,26 @@ func generateURL(secretBase32 string, userID string) string {
 		"secret":    []string{secretBase32},
 		"algorithm": []string{"SHA1"},
 		"digits":    []string{"6"},
-		"period":    []string{fmt.Sprint(validityPeriodInSeconds)},
+		"period":    []string{strconv.FormatInt(validityPeriodInSeconds, 10)},
 	}
 	return fmt.Sprintf(
 		"otpauth://totp/bintaro-university-admission:%s?%s",
 		url.QueryEscape(userID),
 		params.Encode(),
 	)
-
 }
 
-func GenerateTokens(secretBase32 string) ([]string, error) {
+func GenerateOTPTokens(secretBase32 string) ([]string, error) {
 	tokens := make([]string, 5)
 	counterValue := generateCounterValue()
 
 	var i = 0
 	for timeStep := validStartStep; timeStep <= validEndStep; timeStep++ {
-		hash, err := generateHash(secretBase32, uint64(counterValue+timeStep))
+		//nolint:gosec // since counterValue is based on Unix epoch, it should not go to negative, hence no overflow.
+		hash, err := generateHash(
+			secretBase32,
+			uint64(counterValue+timeStep),
+		)
 		if err != nil {
 			return nil, err
 		}
