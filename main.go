@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS sessions (
 	session_token VARCHAR(255) PRIMARY KEY,
 	user_id UUID,
+	type TEXT CHECK(type IN ('GENERAL', 'OTP')),
 	expires_at TIMESTAMPTZ
 );
 

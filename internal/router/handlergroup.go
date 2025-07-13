@@ -30,6 +30,8 @@ type HandlerGroup interface {
 
 	Login(w http.ResponseWriter, r *http.Request)
 	PostLogin(w http.ResponseWriter, r *http.Request)
+	ValidateOTP(w http.ResponseWriter, r *http.Request)
+	PostValidateOTP(w http.ResponseWriter, r *http.Request)
 
 	Dashboard(w http.ResponseWriter, r *http.Request)
 
@@ -45,6 +47,8 @@ type HandlerGroupImpl struct {
 	sessionStore store.SessionStore
 	mfaStore     store.MultiFactorAuthStore
 }
+
+var _ HandlerGroup = (*HandlerGroupImpl)(nil)
 
 func NewHandlerGroup(
 	userStore store.UserStore,
@@ -86,8 +90,9 @@ func (h *HandlerGroupImpl) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	if err := r.ParseForm(); err != nil {
-		slog.WarnContext(r.Context(), "Fail to parse form", logKeyError, err)
+		slog.WarnContext(ctx, "Fail to parse form", logKeyError, err)
 		errorMsgCookie := http.Cookie{
 			Name:     cookieNameErrorMessage,
 			Value:    "Invalid form",
@@ -105,10 +110,10 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	inputtedPassword := r.FormValue("password")
 
-	user, userErr := h.userStore.GetByEmail(r.Context(), email)
+	user, userErr := h.userStore.GetByEmail(ctx, email)
 	if userErr != nil {
 		slog.ErrorContext(
-			r.Context(),
+			ctx,
 			"User not found",
 			logKeyError,
 			userErr,
@@ -131,7 +136,7 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 
 	if err := password.Validate(user.HashedPassword, inputtedPassword); err != nil {
 		slog.ErrorContext(
-			r.Context(),
+			ctx,
 			"Wrong password",
 			logKeyError,
 			err,
@@ -156,16 +161,45 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 
 	token, err := random.GenerateBase64(sessionTokenLength)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
+		slog.ErrorContext(ctx, "Error on token generation", logKeyError, err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
 	}
 
 	tokenExpiry := time.Now().Add(1 * time.Hour)
 
-	s := store.NewSession(token, user.ID, tokenExpiry)
-	if insertErr := h.sessionStore.Insert(r.Context(), s); insertErr != nil {
-		slog.ErrorContext(r.Context(), "Failed to insert session", logKeyError, insertErr)
+	mfa, mfaErr := h.mfaStore.GetByUserID(ctx, user.ID)
+	if mfaErr != nil && !errors.Is(err, sql.ErrNoRows) {
+		slog.ErrorContext(ctx, "Failed to get MFA from database", logKeyError, err)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	if mfa == nil {
+		s := store.NewSession(token, user.ID, store.SessionTypeGeneral, tokenExpiry)
+		if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
+			slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
+			http.Redirect(w, r, "/error", http.StatusSeeOther)
+			return
+		}
+
+		cookie := http.Cookie{
+			Name:     cookieNameSessionToken,
+			Value:    token,
+			HttpOnly: true,
+			Secure:   true,
+			Expires:  tokenExpiry,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		}
+		http.SetCookie(w, &cookie)
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	s := store.NewSession(token, user.ID, store.SessionTypeOTP, tokenExpiry)
+	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
+		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
 	}
@@ -180,8 +214,34 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	}
 	http.SetCookie(w, &cookie)
+	http.Redirect(w, r, "/login/validate-otp", http.StatusSeeOther)
+}
 
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+func (h *HandlerGroupImpl) ValidateOTP(w http.ResponseWriter, r *http.Request) {
+	c, _ := r.Cookie(cookieNameErrorMessage)
+	var errorMessage string
+	if c != nil {
+		errorMessage = c.Value
+	}
+	validateOTP := pages.ValidateOTP(errorMessage)
+
+	cookie := http.Cookie{
+		Name:     cookieNameErrorMessage,
+		Value:    "",
+		HttpOnly: true,
+		Secure:   true,
+		MaxAge:   -1,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	}
+	http.SetCookie(w, &cookie)
+
+	templ.Handler(validateOTP).ServeHTTP(w, r)
+}
+
+func (h *HandlerGroupImpl) PostValidateOTP(w http.ResponseWriter, r *http.Request) {
+	// TODO dejan
+	panic("unimplemented")
 }
 
 func (h *HandlerGroupImpl) Register(w http.ResponseWriter, r *http.Request) {
@@ -312,7 +372,7 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 
 	tokenExpiry := time.Now().Add(1 * time.Hour)
 
-	s := store.NewSession(t, userID, tokenExpiry)
+	s := store.NewSession(t, userID, store.SessionTypeGeneral, tokenExpiry)
 	if insertSessionErr := h.sessionStore.Insert(r.Context(), s); insertSessionErr != nil {
 		slog.ErrorContext(
 			r.Context(),

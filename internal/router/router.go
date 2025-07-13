@@ -27,6 +27,8 @@ func NewRouter(hg HandlerGroup, mg MiddlewareGroup) http.Handler {
 	})
 	r.Get("/login", hg.Login)
 	r.Post("/login", hg.PostLogin)
+	r.Get("/login/validate-otp", hg.ValidateOTP)
+	r.Post("/login/validate-otp", hg.PostValidateOTP)
 	r.Get("/register", hg.Register)
 	r.Post("/register", hg.PostRegister)
 	r.With(mg.Authenticated).Get("/dashboard", hg.Dashboard)
