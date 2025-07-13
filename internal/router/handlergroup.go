@@ -697,6 +697,32 @@ func (h *HandlerGroupImpl) PostTOTPSetup(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	token, err := random.GenerateBase64(sessionTokenLength)
+	if err != nil {
+		slog.ErrorContext(ctx, "Error on token generation", logKeyError, err)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	tokenExpiry := time.Now().Add(1 * time.Hour)
+
+	s := store.NewSession(token, user.ID, store.SessionTypeGeneral, tokenExpiry)
+	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
+		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	cookie := http.Cookie{
+		Name:     cookieNameSessionToken,
+		Value:    token,
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  tokenExpiry,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	}
+	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 

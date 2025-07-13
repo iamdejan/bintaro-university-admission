@@ -464,6 +464,7 @@ templ TOTPSetup(props TOTPSetupProps) {
 						body: body,
 
 					}).then((response) => {
+						alert("Success adding 2FA!");
 						window.location.href = response.url;
 					});
 				}

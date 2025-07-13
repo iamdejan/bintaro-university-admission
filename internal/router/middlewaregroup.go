@@ -54,7 +54,14 @@ func (m *MiddlewareGroupImpl) Authenticated(next http.Handler) http.Handler {
 
 		// only allow general token
 		if session.Type != store.SessionTypeGeneral {
-			slog.ErrorContext(r.Context(), "Wrong session type", logKeyUserID, user.ID)
+			slog.ErrorContext(
+				r.Context(),
+				"Wrong session type",
+				logKeyUserID,
+				user.ID,
+				logKeySessionType,
+				session.Type,
+			)
 
 			errorMsgCookie := http.Cookie{
 				Name:     cookieNameErrorMessage,
