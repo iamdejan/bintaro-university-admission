@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
 	"bintaro-university-admission/internal/pages"
@@ -159,15 +160,6 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := random.GenerateBase64(sessionTokenLength)
-	if err != nil {
-		slog.ErrorContext(ctx, "Error on token generation", logKeyError, err)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	tokenExpiry := time.Now().Add(1 * time.Hour)
-
 	mfa, err := h.mfaStore.GetByUserID(ctx, user.ID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		slog.ErrorContext(ctx, "Failed to get MFA from database", logKeyError, err)
@@ -176,44 +168,16 @@ func (h *HandlerGroupImpl) PostLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if mfa == nil {
-		s := store.NewSession(token, user.ID, store.SessionTypeGeneral, tokenExpiry)
-		if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
-			slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
-			http.Redirect(w, r, "/error", http.StatusSeeOther)
+		if err = h.generateAndSetToken(w, r, user.ID, store.SessionTypeGeneral); err != nil {
 			return
 		}
-
-		cookie := http.Cookie{
-			Name:     cookieNameSessionToken,
-			Value:    token,
-			HttpOnly: true,
-			Secure:   true,
-			Expires:  tokenExpiry,
-			SameSite: http.SameSiteStrictMode,
-			Path:     "/",
-		}
-		http.SetCookie(w, &cookie)
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 		return
 	}
 
-	s := store.NewSession(token, user.ID, store.SessionTypeOTP, tokenExpiry)
-	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
-		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
+	if err = h.generateAndSetToken(w, r, user.ID, store.SessionTypeOTP); err != nil {
 		return
 	}
-
-	cookie := http.Cookie{
-		Name:     cookieNameSessionToken,
-		Value:    token,
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  tokenExpiry,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	}
-	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/login/validate-otp", http.StatusSeeOther)
 }
 
@@ -360,37 +324,9 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	t, err := random.GenerateBase64(sessionTokenLength)
-	if err != nil {
-		slog.ErrorContext(r.Context(), "Error on token generation", logKeyError, err)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
+	if err := h.generateAndSetToken(w, r, userID, store.SessionTypeGeneral); err != nil {
 		return
 	}
-
-	tokenExpiry := time.Now().Add(1 * time.Hour)
-
-	s := store.NewSession(t, userID, store.SessionTypeGeneral, tokenExpiry)
-	if insertSessionErr := h.sessionStore.Insert(r.Context(), s); insertSessionErr != nil {
-		slog.ErrorContext(
-			r.Context(),
-			"Error when saving session token",
-			logKeyError,
-			insertSessionErr,
-		)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	cookie := http.Cookie{
-		Name:     cookieNameSessionToken,
-		Value:    t,
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  tokenExpiry,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	}
-	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
@@ -471,32 +407,9 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 	}
 	totpSetup := pages.TOTPSetup(props)
 
-	token, err := random.GenerateBase64(sessionTokenLength)
-	if err != nil {
-		slog.ErrorContext(ctx, "Error on token generation", logKeyError, err)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
+	if err = h.generateAndSetToken(w, r, user.ID, store.SessionTypeOTP); err != nil {
 		return
 	}
-
-	tokenExpiry := time.Now().Add(1 * time.Hour)
-
-	s := store.NewSession(token, user.ID, store.SessionTypeOTP, tokenExpiry)
-	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
-		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	cookie := http.Cookie{
-		Name:     cookieNameSessionToken,
-		Value:    token,
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  tokenExpiry,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	}
-	http.SetCookie(w, &cookie)
 	templ.Handler(totpSetup).ServeHTTP(w, r)
 }
 
@@ -571,13 +484,7 @@ func (h *HandlerGroupImpl) validateOTP(
 		return
 	}
 
-	isValid := false
-	for _, token := range validOTPTokens {
-		if token == inputtedOTPToken {
-			isValid = true
-			break
-		}
-	}
+	isValid := slices.Contains(validOTPTokens, inputtedOTPToken)
 	if !isValid {
 		errorMsgCookie := http.Cookie{
 			Name:     cookieNameErrorMessage,
@@ -593,32 +500,9 @@ func (h *HandlerGroupImpl) validateOTP(
 		return
 	}
 
-	token, err := random.GenerateBase64(sessionTokenLength)
-	if err != nil {
-		slog.ErrorContext(ctx, "Error on token generation", logKeyError, err)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
+	if err = h.generateAndSetToken(w, r, user.ID, store.SessionTypeGeneral); err != nil {
 		return
 	}
-
-	tokenExpiry := time.Now().Add(1 * time.Hour)
-
-	s := store.NewSession(token, user.ID, store.SessionTypeGeneral, tokenExpiry)
-	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
-		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	cookie := http.Cookie{
-		Name:     cookieNameSessionToken,
-		Value:    token,
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  tokenExpiry,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	}
-	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
@@ -637,31 +521,9 @@ func (h *HandlerGroupImpl) CancelTOTPSetup(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	token, err := random.GenerateBase64(sessionTokenLength)
-	if err != nil {
-		slog.ErrorContext(ctx, "Error on token generation", logKeyError, err)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
+	if err := h.generateAndSetToken(w, r, user.ID, store.SessionTypeOTP); err != nil {
 		return
 	}
-
-	tokenExpiry := time.Now().Add(1 * time.Hour)
-	s := store.NewSession(token, user.ID, store.SessionTypeOTP, tokenExpiry)
-	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
-		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-
-	cookie := http.Cookie{
-		Name:     cookieNameSessionToken,
-		Value:    token,
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  tokenExpiry,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	}
-	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
@@ -699,4 +561,34 @@ func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
+func (h *HandlerGroupImpl) generateAndSetToken(w http.ResponseWriter, r *http.Request, userID string, sessionType store.SessionType) error {
+	ctx := r.Context()
+	token, err := random.GenerateBase64(sessionTokenLength)
+	if err != nil {
+		slog.ErrorContext(ctx, "Error on token generation", logKeyError, err)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return err
+	}
+
+	tokenExpiry := time.Now().Add(1 * time.Hour)
+	s := store.NewSession(token, userID, sessionType, tokenExpiry)
+	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
+		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return insertErr
+	}
+
+	cookie := http.Cookie{
+		Name:     cookieNameSessionToken,
+		Value:    token,
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  tokenExpiry,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	}
+	http.SetCookie(w, &cookie)
+	return nil
 }
