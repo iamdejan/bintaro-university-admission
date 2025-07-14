@@ -67,7 +67,7 @@ func (m *MiddlewareGroupImpl) validateSessionByType(
 	r *http.Request,
 	expectedSessionType store.SessionType,
 ) (context.Context, error) {
-	c, cookieErr := r.Cookie(cookieNameSessionToken)
+	c, cookieErr := r.Cookie(store.CookieNameSessionToken)
 	if cookieErr != nil && errors.Is(cookieErr, http.ErrNoCookie) {
 		logAndSetErrorMessageCookie(
 			w,

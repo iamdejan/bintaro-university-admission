@@ -418,7 +418,7 @@ func (h *HandlerGroupImpl) CancelTOTPSetup(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {
-	c, cookieErr := r.Cookie(cookieNameSessionToken)
+	c, cookieErr := r.Cookie(store.CookieNameSessionToken)
 	if cookieErr != nil {
 		slog.ErrorContext(
 			r.Context(),
@@ -440,7 +440,7 @@ func (h *HandlerGroupImpl) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deleteCookie(w, cookieNameSessionToken)
+	deleteCookie(w, store.CookieNameSessionToken)
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
@@ -467,38 +467,4 @@ func (h *HandlerGroupImpl) generateAndSetToken(
 
 	http.SetCookie(w, s.Cookie())
 	return nil
-}
-
-func logAndSetErrorMessageCookie(
-	w http.ResponseWriter,
-	r *http.Request,
-	logTitle string,
-	originalError error,
-	errorMessage string,
-) {
-	ctx := r.Context()
-	slog.ErrorContext(ctx, logTitle, logKeyError, originalError)
-	errorMsgCookie := http.Cookie{
-		Name:     cookieNameErrorMessage,
-		Value:    errorMessage,
-		Expires:  time.Now().Add(5 * time.Minute),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	}
-	http.SetCookie(w, &errorMsgCookie)
-}
-
-func deleteCookie(w http.ResponseWriter, cookieName string) {
-	cookie := http.Cookie{
-		Name:     cookieName,
-		Value:    "",
-		HttpOnly: true,
-		Secure:   true,
-		MaxAge:   -1,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	}
-	http.SetCookie(w, &cookie)
 }

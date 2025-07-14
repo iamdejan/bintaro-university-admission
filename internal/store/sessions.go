@@ -16,7 +16,7 @@ const (
 	SessionTypeOTP
 )
 
-const cookieNameSessionToken = "__Host-session_token" //nolint:gosec // this is only cookie-name, not the value
+const CookieNameSessionToken = "__Host-session_token" //nolint:gosec // this is only cookie-name, not the value
 
 func (st SessionType) String() string {
 	switch st {
@@ -68,7 +68,7 @@ func (s Session) ExpiryTime() time.Time {
 
 func (s Session) Cookie() *http.Cookie {
 	return &http.Cookie{
-		Name:     cookieNameSessionToken,
+		Name:     CookieNameSessionToken,
 		Value:    s.SessionToken,
 		HttpOnly: true,
 		Secure:   true,
