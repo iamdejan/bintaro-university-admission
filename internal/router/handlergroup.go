@@ -74,10 +74,9 @@ func (h *HandlerGroupImpl) Login(w http.ResponseWriter, r *http.Request) {
 	if c != nil {
 		errorMessage = c.Value
 	}
+
 	login := pages.Login(errorMessage)
-
 	deleteCookie(w, cookieNameErrorMessage)
-
 	templ.Handler(login).ServeHTTP(w, r)
 }
 
@@ -133,7 +132,6 @@ func (h *HandlerGroupImpl) ValidateOTP(w http.ResponseWriter, r *http.Request) {
 		errorMessage = c.Value
 	}
 	validateOTP := pages.ValidateOTP(errorMessage)
-
 	deleteCookie(w, cookieNameErrorMessage)
 	templ.Handler(validateOTP).ServeHTTP(w, r)
 }
@@ -149,7 +147,6 @@ func (h *HandlerGroupImpl) Register(w http.ResponseWriter, r *http.Request) {
 		errorMessage = c.Value
 	}
 	register := pages.Register(errorMessage)
-
 	deleteCookie(w, cookieNameErrorMessage)
 	templ.Handler(register).ServeHTTP(w, r)
 }
@@ -212,7 +209,13 @@ func (h *HandlerGroupImpl) PostRegister(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if existingUser != nil {
-		logAndSetErrorMessageCookie(w, r, "User already exists", errors.New("user already exists"), "User already exists")
+		logAndSetErrorMessageCookie(
+			w,
+			r,
+			"User already exists",
+			errors.New("user already exists"),
+			"User already exists",
+		)
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
 		return
 	}
@@ -455,24 +458,14 @@ func (h *HandlerGroupImpl) generateAndSetToken(
 		return err
 	}
 
-	tokenExpiry := time.Now().Add(1 * time.Hour)
-	s := store.NewSession(token, userID, sessionType, tokenExpiry)
+	s := store.NewSession(token, userID, sessionType, time.Now().Add(1*time.Hour))
 	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
 		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return insertErr
 	}
 
-	cookie := http.Cookie{
-		Name:     cookieNameSessionToken,
-		Value:    token,
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  tokenExpiry,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	}
-	http.SetCookie(w, &cookie)
+	http.SetCookie(w, s.Cookie())
 	return nil
 }
 
