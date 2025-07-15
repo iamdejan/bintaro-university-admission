@@ -320,7 +320,7 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 		UserID:       user.ID,
 		SecretBase32: secretBase32,
 	}
-	if err := h.mfaStore.Insert(ctx, mfa); err != nil {
+	if err = h.mfaStore.Insert(ctx, mfa); err != nil {
 		slog.ErrorContext(
 			ctx,
 			"Failed to insert MFA to database",
