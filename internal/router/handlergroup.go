@@ -21,6 +21,8 @@ import (
 const (
 	sessionTokenLength = 64
 	secretLength       = 32
+
+	validSessionDuration = 1 * time.Hour
 )
 
 type HandlerGroup interface {
@@ -261,6 +263,14 @@ func (h *HandlerGroupImpl) Dashboard(w http.ResponseWriter, r *http.Request) {
 	if mfa != nil {
 		props.HasTOTPSetup = true
 	}
+
+	c, _ := r.Cookie(cookieNameErrorMessage)
+	if c != nil {
+		props.ErrorMessage = c.Value
+	}
+
+	deleteCookie(w, cookieNameErrorMessage)
+
 	dashboard := pages.Dashboard(props)
 	templ.Handler(dashboard).ServeHTTP(w, r)
 }
@@ -269,7 +279,30 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user, _ := ctx.Value(userCtx{}).(*store.User)
 
-	if err := h.mfaStore.DeleteByUserID(ctx, user.ID); err != nil &&
+	existingMFA, err := h.mfaStore.GetByUserID(ctx, user.ID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		slog.ErrorContext(
+			ctx,
+			"Failed to get MFA from database",
+			logKeyError,
+			err,
+		)
+		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+	if existingMFA != nil {
+		logAndSetErrorMessageCookie(
+			w,
+			r,
+			"MFA already exists",
+			errors.New("mfa already exists"),
+			"MFA already exists",
+		)
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	if err = h.mfaStore.DeleteByUserID(ctx, user.ID); err != nil &&
 		!errors.Is(err, sql.ErrNoRows) {
 		slog.ErrorContext(
 			ctx,
@@ -458,7 +491,7 @@ func (h *HandlerGroupImpl) generateAndSetToken(
 		return err
 	}
 
-	s := store.NewSession(token, userID, sessionType, time.Now().Add(1*time.Hour))
+	s := store.NewSession(token, userID, sessionType, time.Now().Add(validSessionDuration))
 	if insertErr := h.sessionStore.Insert(ctx, s); insertErr != nil {
 		slog.ErrorContext(ctx, "Failed to insert session", logKeyError, insertErr)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
