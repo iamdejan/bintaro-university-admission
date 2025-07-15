@@ -8,6 +8,19 @@ type DashboardProps struct {
 	ErrorMessage string
 }
 
+templ Dashboard(props DashboardProps) {
+	{{ dropDownItems := make([]templ.Component, 0) }}
+	if !props.HasTOTPSetup {
+		{{ dropDownItems = append(dropDownItems, totpSetupDropDownItem()) }}
+	}
+	{{ dropDownItems = append(dropDownItems, logoutDropDownItem()) }}
+	@components.PageWrapper(components.PageWrapperProps{
+		MainContent:   dashboardMainContent(props),
+		DropDownItems: dropDownItems,
+		ErrorMessage:  props.ErrorMessage,
+	})
+}
+
 templ dashboardMainContent(props DashboardProps) {
 	<div class="welcome-section">
 		<h2>Welcome, { props.FullName }</h2>
@@ -127,18 +140,5 @@ templ logoutDropDownItem() {
 	@components.DropDownItem(components.DropDownItemProps{
 		Link: "/logout",
 		Text: "Logout",
-	})
-}
-
-templ Dashboard(props DashboardProps) {
-	{{ dropDownItems := make([]templ.Component, 0) }}
-	if !props.HasTOTPSetup {
-		{{ dropDownItems = append(dropDownItems, totpSetupDropDownItem()) }}
-	}
-	{{ dropDownItems = append(dropDownItems, logoutDropDownItem()) }}
-	@components.PageWrapper(components.PageWrapperProps{
-		MainContent:   dashboardMainContent(props),
-		DropDownItems: dropDownItems,
-		ErrorMessage:  props.ErrorMessage,
 	})
 }

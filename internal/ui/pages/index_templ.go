@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "bintaro-university-admission/internal/ui/components"
 
-func indexMainContent() templ.Component {
+func Index() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -31,7 +31,20 @@ func indexMainContent() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"welcome-section\"><h2>Welcome to Bintaro University Admission</h2><p>Track your admission progress and stay updated with important notifications.</p></div><script>\n\t\tfunction toggleDropdown() {\n\t\t\tconst dropdown = document.getElementById(\"dropdown\");\n\t\t\tconst hamburgerBtn = document.querySelector(\".hamburger-btn\");\n\n\t\t\tdropdown.classList.toggle(\"show\");\n\t\t\thamburgerBtn.classList.toggle(\"active\");\n\t\t}\n\n\t\t// Close dropdown when clicking outside\n\t\tdocument.addEventListener(\"click\", function (event) {\n\t\t\tconst hamburgerMenu = document.querySelector(\".hamburger-menu\");\n\t\t\tconst dropdown = document.getElementById(\"dropdown\");\n\t\t\tconst hamburgerBtn = document.querySelector(\".hamburger-btn\");\n\n\t\t\tif (!hamburgerMenu.contains(event.target)) {\n\t\t\t\tdropdown.classList.remove(\"show\");\n\t\t\t\thamburgerBtn.classList.remove(\"active\");\n\t\t\t}\n\t\t});\n\n\t\t// Prevent dropdown from closing when clicking inside it\n\t\tdocument.getElementById(\"dropdown\").addEventListener(\"click\", function (event) {\n\t\t\tevent.stopPropagation();\n\t\t});\n\t</script>")
+		templ_7745c5c3_Err = components.PageWrapper(components.PageWrapperProps{
+			MainContent: indexMainContent(),
+			DropDownItems: []templ.Component{
+				components.DropDownItem(components.DropDownItemProps{
+					Link: "/login",
+					Text: "Login",
+				}),
+				components.DropDownItem(components.DropDownItemProps{
+					Link: "/register",
+					Text: "Register",
+				}),
+			},
+			ErrorMessage: "",
+		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -39,7 +52,7 @@ func indexMainContent() templ.Component {
 	})
 }
 
-func Index() templ.Component {
+func indexMainContent() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -60,20 +73,7 @@ func Index() templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = components.PageWrapper(components.PageWrapperProps{
-			MainContent: indexMainContent(),
-			DropDownItems: []templ.Component{
-				components.DropDownItem(components.DropDownItemProps{
-					Link: "/login",
-					Text: "Login",
-				}),
-				components.DropDownItem(components.DropDownItemProps{
-					Link: "/register",
-					Text: "Register",
-				}),
-			},
-			ErrorMessage: "",
-		}).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"welcome-section\"><h2>Welcome to Bintaro University Admission</h2><p>Track your admission progress and stay updated with important notifications.</p></div><script>\n\t\tfunction toggleDropdown() {\n\t\t\tconst dropdown = document.getElementById(\"dropdown\");\n\t\t\tconst hamburgerBtn = document.querySelector(\".hamburger-btn\");\n\n\t\t\tdropdown.classList.toggle(\"show\");\n\t\t\thamburgerBtn.classList.toggle(\"active\");\n\t\t}\n\n\t\t// Close dropdown when clicking outside\n\t\tdocument.addEventListener(\"click\", function (event) {\n\t\t\tconst hamburgerMenu = document.querySelector(\".hamburger-menu\");\n\t\t\tconst dropdown = document.getElementById(\"dropdown\");\n\t\t\tconst hamburgerBtn = document.querySelector(\".hamburger-btn\");\n\n\t\t\tif (!hamburgerMenu.contains(event.target)) {\n\t\t\t\tdropdown.classList.remove(\"show\");\n\t\t\t\thamburgerBtn.classList.remove(\"active\");\n\t\t\t}\n\t\t});\n\n\t\t// Prevent dropdown from closing when clicking inside it\n\t\tdocument.getElementById(\"dropdown\").addEventListener(\"click\", function (event) {\n\t\t\tevent.stopPropagation();\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

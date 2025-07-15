@@ -2,6 +2,23 @@ package pages
 
 import "bintaro-university-admission/internal/ui/components"
 
+templ Index() {
+	@components.PageWrapper(components.PageWrapperProps{
+		MainContent: indexMainContent(),
+		DropDownItems: []templ.Component{
+			components.DropDownItem(components.DropDownItemProps{
+				Link: "/login",
+				Text: "Login",
+			}),
+			components.DropDownItem(components.DropDownItemProps{
+				Link: "/register",
+				Text: "Register",
+			}),
+		},
+		ErrorMessage: "",
+	})
+}
+
 templ indexMainContent() {
 	<div class="welcome-section">
 		<h2>Welcome to Bintaro University Admission</h2>
@@ -33,21 +50,4 @@ templ indexMainContent() {
 			event.stopPropagation();
 		});
 	</script>
-}
-
-templ Index() {
-	@components.PageWrapper(components.PageWrapperProps{
-		MainContent: indexMainContent(),
-		DropDownItems: []templ.Component{
-			components.DropDownItem(components.DropDownItemProps{
-				Link: "/login",
-				Text: "Login",
-			}),
-			components.DropDownItem(components.DropDownItemProps{
-				Link: "/register",
-				Text: "Register",
-			}),
-		},
-		ErrorMessage: "",
-	})
 }
