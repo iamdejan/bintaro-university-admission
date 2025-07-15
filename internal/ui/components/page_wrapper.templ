@@ -1,6 +1,12 @@
-package pages
+package components
 
-templ Index() {
+type PageWrapperProps struct {
+	MainContent   templ.Component
+	DropDownItems []templ.Component
+	ErrorMessage  string
+}
+
+templ PageWrapper(props PageWrapperProps) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -278,6 +284,40 @@ templ Index() {
                                         grid-template-columns: 1fr;
                                 }
                         }
+
+			.error-alert {
+				background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+				color: white;
+				padding: 1rem;
+				border-radius: 12px;
+				margin-bottom: 1.5rem;
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);
+				display: block;
+				animation: slideDown 0.4s ease-out;
+			}
+
+			@keyframes slideDown {
+				from {
+					opacity: 0;
+					transform: translateY(-10px);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			.error-alert .alert-icon {
+				display: inline-block;
+				margin-right: 0.5rem;
+				font-weight: bold;
+			}
+
+			.error-alert .alert-message {
+				font-size: 0.9rem;
+				font-weight: 500;
+			}
                 </style>
 		</head>
 		<body>
@@ -292,21 +332,21 @@ templ Index() {
 						<span></span>
 					</button>
 					<div class="dropdown" id="dropdown">
-						<a href="/login" style="text-decoration: none; color: black;">
-							<div class="dropdown-item">Login</div>
-						</a>
-						<a href="/register" style="text-decoration: none; color: black;">
-							<div class="dropdown-item">Register</div>
-						</a>
+						for _, item := range props.DropDownItems {
+							@item
+						}
 					</div>
 				</div>
 			</nav>
 			<div class="main-content">
 				<div class="dashboard-container">
-					<div class="welcome-section">
-						<h2>Welcome to Bintaro University Admission</h2>
-						<p>Track your admission progress and stay updated with important notifications.</p>
-					</div>
+					if props.ErrorMessage != "" {
+						<div class="error-alert" id="errorAlert">
+							<span class="alert-icon">⚠</span>
+							<span class="alert-message" id="errorMessage">{ props.ErrorMessage }</span>
+						</div>
+					}
+					@props.MainContent
 				</div>
 			</div>
 			<script>

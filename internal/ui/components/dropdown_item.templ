@@ -1,0 +1,12 @@
+package components
+
+type DropDownItemProps struct {
+	Link string
+	Text string
+}
+
+templ DropDownItem(props DropDownItemProps) {
+	<a href={ props.Link } style="text-decoration: none; color: black;">
+		<div class="dropdown-item">{ props.Text }</div>
+	</a>
+}

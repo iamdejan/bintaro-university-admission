@@ -3,7 +3,7 @@ package router
 import (
 	"net/http"
 
-	"bintaro-university-admission/internal/pages"
+	"bintaro-university-admission/internal/ui/pages"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"

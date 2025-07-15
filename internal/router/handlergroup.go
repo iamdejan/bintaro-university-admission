@@ -8,11 +8,11 @@ import (
 	"slices"
 	"time"
 
-	"bintaro-university-admission/internal/pages"
 	"bintaro-university-admission/internal/password"
 	"bintaro-university-admission/internal/random"
 	"bintaro-university-admission/internal/store"
 	"bintaro-university-admission/internal/totp"
+	"bintaro-university-admission/internal/ui/pages"
 
 	"github.com/a-h/templ"
 	"github.com/google/uuid"
