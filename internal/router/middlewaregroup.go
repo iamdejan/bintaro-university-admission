@@ -67,20 +67,15 @@ func (m *MiddlewareGroupImpl) validateSessionByType(
 	r *http.Request,
 	expectedSessionType store.SessionType,
 ) (context.Context, error) {
-	c, cookieErr := r.Cookie(cookieNameSessionToken)
+	c, cookieErr := r.Cookie(store.CookieNameSessionToken)
 	if cookieErr != nil && errors.Is(cookieErr, http.ErrNoCookie) {
-		slog.ErrorContext(r.Context(), "Cookie not found in request", logKeyError, cookieErr)
-
-		errorMsgCookie := http.Cookie{
-			Name:     cookieNameErrorMessage,
-			Value:    "Session expired. Please log in again.",
-			Expires:  time.Now().Add(10 * time.Minute),
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			Path:     "/",
-		}
-		http.SetCookie(w, &errorMsgCookie)
+		logAndSetErrorMessageCookie(
+			w,
+			r,
+			"Cookie not found in request",
+			cookieErr,
+			"Session expired. Please log in again.",
+		)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return nil, cookieErr
 	}
@@ -94,18 +89,13 @@ func (m *MiddlewareGroupImpl) validateSessionByType(
 	sessionToken := c.Value
 	session, sessionErr := m.sessionStore.Get(r.Context(), sessionToken)
 	if sessionErr != nil && errors.Is(sessionErr, sql.ErrNoRows) {
-		slog.ErrorContext(r.Context(), "Cookie not found in database", logKeyError, sessionErr)
-
-		errorMsgCookie := http.Cookie{
-			Name:     cookieNameErrorMessage,
-			Value:    "Session expired. Please log in again.",
-			Expires:  time.Now().Add(10 * time.Minute),
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			Path:     "/",
-		}
-		http.SetCookie(w, &errorMsgCookie)
+		logAndSetErrorMessageCookie(
+			w,
+			r,
+			"Cookie not found in database",
+			sessionErr,
+			"Session expired. Please log in again.",
+		)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return nil, sessionErr
 	}
@@ -121,8 +111,6 @@ func (m *MiddlewareGroupImpl) validateSessionByType(
 	}
 
 	if time.Now().After(session.ExpiryTime()) {
-		slog.ErrorContext(r.Context(), "Cookie expired")
-
 		if deleteSessionErr := m.sessionStore.Delete(r.Context(), sessionToken); deleteSessionErr != nil {
 			slog.ErrorContext(
 				r.Context(),
@@ -134,24 +122,19 @@ func (m *MiddlewareGroupImpl) validateSessionByType(
 			return nil, deleteSessionErr
 		}
 
-		errorMsgCookie := http.Cookie{
-			Name:     cookieNameErrorMessage,
-			Value:    "Session expired. Please log in again.",
-			Expires:  time.Now().Add(10 * time.Minute),
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			Path:     "/",
-		}
-		http.SetCookie(w, &errorMsgCookie)
+		logAndSetErrorMessageCookie(
+			w,
+			r,
+			"Cookie expired",
+			errors.New("cookie is expired"),
+			"Session expired. Please log in again.",
+		)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return nil, errCookieExpired
 	}
 
 	user, userErr := m.userStore.GetByID(r.Context(), session.UserID)
 	if userErr != nil && errors.Is(userErr, sql.ErrNoRows) {
-		slog.ErrorContext(r.Context(), "User not found", logKeyError, userErr)
-
 		if deleteSessionErr := m.sessionStore.Delete(r.Context(), sessionToken); deleteSessionErr != nil {
 			slog.ErrorContext(
 				r.Context(),
@@ -163,16 +146,13 @@ func (m *MiddlewareGroupImpl) validateSessionByType(
 			return nil, deleteSessionErr
 		}
 
-		errorMsgCookie := http.Cookie{
-			Name:     cookieNameErrorMessage,
-			Value:    "Session expired. Please log in again.",
-			Expires:  time.Now().Add(10 * time.Minute),
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			Path:     "/",
-		}
-		http.SetCookie(w, &errorMsgCookie)
+		logAndSetErrorMessageCookie(
+			w,
+			r,
+			"User not found",
+			userErr,
+			"Session expired. Please log in again.",
+		)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return nil, errCookieExpired
 	}
@@ -189,25 +169,13 @@ func (m *MiddlewareGroupImpl) validateSessionByType(
 	}
 
 	if session.Type != expectedSessionType {
-		slog.ErrorContext(
-			r.Context(),
+		logAndSetErrorMessageCookie(
+			w,
+			r,
 			"Wrong session type",
-			logKeyUserID,
-			user.ID,
-			logKeySessionType,
-			session.Type,
+			errors.New("wrong session type"),
+			"Session expired. Please log in again.",
 		)
-
-		errorMsgCookie := http.Cookie{
-			Name:     cookieNameErrorMessage,
-			Value:    "Session expired. Please log in again.",
-			Expires:  time.Now().Add(10 * time.Minute),
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			Path:     "/",
-		}
-		http.SetCookie(w, &errorMsgCookie)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return nil, errWrongSessionType
 	}

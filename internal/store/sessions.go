@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/http"
 	"time"
 )
 
@@ -14,6 +15,8 @@ const (
 	SessionTypeGeneral
 	SessionTypeOTP
 )
+
+const CookieNameSessionToken = "__Host-session_token" //nolint:gosec // this is only cookie-name, not the value
 
 func (st SessionType) String() string {
 	switch st {
@@ -61,6 +64,18 @@ func NewSession(
 func (s Session) ExpiryTime() time.Time {
 	t, _ := time.Parse(time.RFC3339, s.expiresAt)
 	return t
+}
+
+func (s Session) Cookie() *http.Cookie {
+	return &http.Cookie{
+		Name:     CookieNameSessionToken,
+		Value:    s.SessionToken,
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  s.ExpiryTime(),
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	}
 }
 
 type SessionStore interface {
