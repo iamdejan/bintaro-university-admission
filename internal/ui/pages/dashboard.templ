@@ -59,19 +59,6 @@ templ dashboardMainContent(props DashboardProps) {
 			hamburgerBtn.classList.toggle("active");
 		}
 
-		function logout() {
-			if (confirm("Are you sure you want to logout?")) {
-				window.location.href = '/logout';
-				return;
-			}
-
-			// Close dropdown after action
-			const dropdown = document.getElementById("dropdown");
-			const hamburgerBtn = document.querySelector(".hamburger-btn");
-			dropdown.classList.remove("show");
-			hamburgerBtn.classList.remove("active");
-		}
-
 		function readMore(type) {
 			let message = "";
 			switch (type) {
@@ -138,7 +125,28 @@ templ totpSetupDropDownItem() {
 
 templ logoutDropDownItem() {
 	@components.DropDownItem(components.DropDownItemProps{
-		Link: "/logout",
+		ID:   "logout",
 		Text: "Logout",
 	})
+	<script>
+		function logout(e) {
+			e.preventDefault();
+
+			if (confirm("Are you sure you want to logout?")) {
+				window.location.href = '/logout';
+				return;
+			}
+
+			// Close dropdown after action
+			const dropdown = document.getElementById("dropdown");
+			const hamburgerBtn = document.querySelector(".hamburger-btn");
+			dropdown.classList.remove("show");
+			hamburgerBtn.classList.remove("active");
+		}
+
+		setTimeout(() => {
+			const logoutLink = document.querySelector("a#logout");
+			logoutLink.addEventListener("click", logout);
+		}, 0);
+	</script>
 }
