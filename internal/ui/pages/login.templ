@@ -12,77 +12,60 @@ templ Login(errorMessage string) {
 
 templ loginMainForm() {
 	<style>
-	.form-group input {
-		width: 100%;
-		padding: 0.8rem 1rem;
-		border: 2px solid #e1e5e9;
-		border-radius: 12px;
-		font-size: 1rem;
-		transition: all 0.3s ease;
-		background: rgba(255, 255, 255, 0.9);
-	}
-
-	.form-group input:focus {
-		outline: none;
-		border-color: #667eea;
-		box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-		transform: translateY(-1px);
-	}
-
-	.form-group input:hover {
-		border-color: #c1c7d0;
-	}
-
-	.login-btn {
-		width: 100%;
-		padding: 0.9rem;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		color: #fff;
-		border: none;
-		border-radius: 12px;
-		font-size: 1rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.3s ease;
-		box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-		margin-top: 1rem;
-	}
-
-	.login-btn:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-	}
-
-	.login-btn:active {
-		transform: translateY(0);
-	}
-
-	.link-below-form {
-		text-align: center;
-		margin-top: 1.5rem;
-	}
-
-	.link-below-form a {
-		color: #667eea;
-		text-decoration: none;
-		font-size: 0.9rem;
-		transition: color 0.3s ease;
-	}
-
-	.link-below-form a:hover {
-		color: #764ba2;
-		text-decoration: underline;
-	}
-
-	@media (max-width: 480px) {
-		.login-card {
-			padding: 2rem;
-			margin: 1rem;
+		.form-group input {
+			width: 100%;
+			padding: 0.8rem 1rem;
+			border: 2px solid #e1e5e9;
+			border-radius: 12px;
+			font-size: 1rem;
+			transition: all 0.3s ease;
+			background: rgba(255, 255, 255, 0.9);
 		}
-		.navbar h1 {
-			font-size: 1.5rem;
+
+		.form-group input:focus {
+			outline: none;
+			border-color: #667eea;
+			box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+			transform: translateY(-1px);
 		}
-	}
+
+		.form-group input:hover {
+			border-color: #c1c7d0;
+		}
+
+		.login-btn {
+			width: 100%;
+			padding: 0.9rem;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: #fff;
+			border: none;
+			border-radius: 12px;
+			font-size: 1rem;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+			margin-top: 1rem;
+		}
+
+		.login-btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+		}
+
+		.login-btn:active {
+			transform: translateY(0);
+		}
+
+		@media (max-width: 480px) {
+			.login-card {
+				padding: 2rem;
+				margin: 1rem;
+			}
+			.navbar h1 {
+				font-size: 1.5rem;
+			}
+		}
 	</style>
 	<form action="/login" id="loginForm" method="post">
 		<div class="form-group">
