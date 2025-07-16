@@ -143,7 +143,7 @@ templ PageWrapper(props PageWrapperProps) {
                                 align-items: flex-start;
                         }
 
-                        .dashboard-container {
+                        .main-container {
                                 width: 100%;
                                 max-width: 1200px;
                         }
@@ -339,7 +339,7 @@ templ PageWrapper(props PageWrapperProps) {
 				</div>
 			</nav>
 			<div class="main-content">
-				<div class="dashboard-container">
+				<div class="main-container">
 					if props.ErrorMessage != "" {
 						<div class="error-alert" id="errorAlert">
 							<span class="alert-icon">⚠</span>
