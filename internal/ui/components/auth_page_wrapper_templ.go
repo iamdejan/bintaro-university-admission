@@ -9,7 +9,9 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 type AuthPageWrapperProps struct {
+	UTF8Icon     string
 	FormTitle    string
+	Instruction  string
 	ErrorMessage string
 	MainForm     templ.Component
 }
@@ -35,38 +37,84 @@ func AuthPageWrapper(props AuthPageWrapperProps) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Bintaro University Admission - Login</title><style>\n\t\t\t\t* {\n\t\t\t\t\tmargin: 0;\n\t\t\t\t\tpadding: 0;\n\t\t\t\t\tbox-sizing: border-box;\n\t\t\t\t}\n\n\t\t\t\tbody {\n\t\t\t\t\tfont-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n\t\t\t\t\tbackground: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n\t\t\t\t\tmin-height: 100vh;\n\t\t\t\t\tdisplay: flex;\n\t\t\t\t\tflex-direction: column;\n\t\t\t\t}\n\n\t\t\t\t.navbar {\n\t\t\t\t\tbackground: rgba(255, 255, 255, 0.1);\n\t\t\t\t\tbackdrop-filter: blur(10px);\n\t\t\t\t\tpadding: 1rem 0;\n\t\t\t\t\tbox-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);\n\t\t\t\t\tborder-bottom: 1px solid rgba(255, 255, 255, 0.2);\n\t\t\t\t}\n\n\t\t\t\t.navbar h1 {\n\t\t\t\t\ttext-align: center;\n\t\t\t\t\tcolor: #fff;\n\t\t\t\t\tfont-size: 2rem;\n\t\t\t\t\tfont-weight: 600;\n\t\t\t\t\tletter-spacing: 0.5px;\n\t\t\t\t\ttext-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n\t\t\t\t}\n\n\t\t\t\t.main-container {\n\t\t\t\t\tflex: 1;\n\t\t\t\t\tdisplay: flex;\n\t\t\t\t\tjustify-content: center;\n\t\t\t\t\talign-items: center;\n\t\t\t\t\tpadding: 2rem;\n\t\t\t\t}\n\n\t\t\t\t.main-card {\n\t\t\t\t\tbackground: rgba(255, 255, 255, 0.95);\n\t\t\t\t\tpadding: 3rem;\n\t\t\t\t\tborder-radius: 20px;\n\t\t\t\t\tbox-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);\n\t\t\t\t\tbackdrop-filter: blur(10px);\n\t\t\t\t\tborder: 1px solid rgba(255, 255, 255, 0.3);\n\t\t\t\t\twidth: 100%;\n\t\t\t\t\tmax-width: 400px;\n\t\t\t\t\ttransform: translateY(-20px);\n\t\t\t\t\tanimation: fadeInUp 0.8s ease-out;\n\t\t\t\t}\n\n\t\t\t\t@keyframes fadeInUp {\n\t\t\t\t\tfrom {\n\t\t\t\t\t\topacity: 0;\n\t\t\t\t\t\ttransform: translateY(30px);\n\t\t\t\t\t}\n\t\t\t\t\tto {\n\t\t\t\t\t\topacity: 1;\n\t\t\t\t\t\ttransform: translateY(-20px);\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t.main-header {\n\t\t\t\t\ttext-align: center;\n\t\t\t\t\tmargin-bottom: 2rem;\n\t\t\t\t}\n\n\t\t\t\t.main-header h2 {\n\t\t\t\t\tcolor: #333;\n\t\t\t\t\tfont-size: 1.8rem;\n\t\t\t\t\tmargin-bottom: 0.5rem;\n\t\t\t\t}\n\n\t\t\t\t.main-header p {\n\t\t\t\t\tcolor: #666;\n\t\t\t\t\tfont-size: 0.9rem;\n\t\t\t\t}\n\n\t\t\t\t.error-alert {\n\t\t\t\t\tbackground: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);\n\t\t\t\t\tcolor: white;\n\t\t\t\t\tpadding: 1rem;\n\t\t\t\t\tborder-radius: 12px;\n\t\t\t\t\tmargin-bottom: 1.5rem;\n\t\t\t\t\tborder: 1px solid rgba(255, 255, 255, 0.2);\n\t\t\t\t\tbox-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);\n\t\t\t\t\tdisplay: block;\n\t\t\t\t\tanimation: slideDown 0.4s ease-out;\n\t\t\t\t}\n\n\t\t\t\t@keyframes slideDown {\n\t\t\t\t\tfrom {\n\t\t\t\t\t\topacity: 0;\n\t\t\t\t\t\ttransform: translateY(-10px);\n\t\t\t\t\t}\n\t\t\t\t\tto {\n\t\t\t\t\t\topacity: 1;\n\t\t\t\t\t\ttransform: translateY(0);\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t.error-alert .alert-icon {\n\t\t\t\t\tdisplay: inline-block;\n\t\t\t\t\tmargin-right: 0.5rem;\n\t\t\t\t\tfont-weight: bold;\n\t\t\t\t}\n\n\t\t\t\t.error-alert .alert-message {\n\t\t\t\t\tfont-size: 0.9rem;\n\t\t\t\t\tfont-weight: 500;\n\t\t\t\t}\n\n\t\t\t\t.form-group {\n\t\t\t\t\tmargin-bottom: 1.5rem;\n\t\t\t\t}\n\n\t\t\t\t.form-group label {\n\t\t\t\t\tdisplay: block;\n\t\t\t\t\tmargin-bottom: 0.5rem;\n\t\t\t\t\tcolor: #333;\n\t\t\t\t\tfont-weight: 500;\n\t\t\t\t\tfont-size: 0.9rem;\n\t\t\t\t}\n\n\t\t\t\t.form-group input {\n\t\t\t\t\twidth: 100%;\n\t\t\t\t\tpadding: 0.8rem 1rem;\n\t\t\t\t\tborder: 2px solid #e1e5e9;\n\t\t\t\t\tborder-radius: 12px;\n\t\t\t\t\tfont-size: 1rem;\n\t\t\t\t\ttransition: all 0.3s ease;\n\t\t\t\t\tbackground: rgba(255, 255, 255, 0.9);\n\t\t\t\t}\n\n\t\t\t\t.form-group input:focus {\n\t\t\t\t\toutline: none;\n\t\t\t\t\tborder-color: #667eea;\n\t\t\t\t\tbox-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);\n\t\t\t\t\ttransform: translateY(-1px);\n\t\t\t\t}\n\n\t\t\t\t.form-group input:hover {\n\t\t\t\t\tborder-color: #c1c7d0;\n\t\t\t\t}\n\n\t\t\t\t.login-btn {\n\t\t\t\t\twidth: 100%;\n\t\t\t\t\tpadding: 0.9rem;\n\t\t\t\t\tbackground: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n\t\t\t\t\tcolor: #fff;\n\t\t\t\t\tborder: none;\n\t\t\t\t\tborder-radius: 12px;\n\t\t\t\t\tfont-size: 1rem;\n\t\t\t\t\tfont-weight: 600;\n\t\t\t\t\tcursor: pointer;\n\t\t\t\t\ttransition: all 0.3s ease;\n\t\t\t\t\tbox-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);\n\t\t\t\t\tmargin-top: 1rem;\n\t\t\t\t}\n\n\t\t\t\t.login-btn:hover {\n\t\t\t\t\ttransform: translateY(-2px);\n\t\t\t\t\tbox-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);\n\t\t\t\t}\n\n\t\t\t\t.login-btn:active {\n\t\t\t\t\ttransform: translateY(0);\n\t\t\t\t}\n\n\t\t\t\t.link-below-form {\n\t\t\t\t\ttext-align: center;\n\t\t\t\t\tmargin-top: 1.5rem;\n\t\t\t\t}\n\n\t\t\t\t.link-below-form a {\n\t\t\t\t\tcolor: #667eea;\n\t\t\t\t\ttext-decoration: none;\n\t\t\t\t\tfont-size: 0.9rem;\n\t\t\t\t\ttransition: color 0.3s ease;\n\t\t\t\t}\n\n\t\t\t\t.link-below-form a:hover {\n\t\t\t\t\tcolor: #764ba2;\n\t\t\t\t\ttext-decoration: underline;\n\t\t\t\t}\n\n\t\t\t\t@media (max-width: 480px) {\n\t\t\t\t\t.login-card {\n\t\t\t\t\t\tpadding: 2rem;\n\t\t\t\t\t\tmargin: 1rem;\n\t\t\t\t\t}\n\t\t\t\t\t.navbar h1 {\n\t\t\t\t\t\tfont-size: 1.5rem;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t</style></head><body><nav class=\"navbar\"><h1><a style=\"text-decoration: none; color: white\" href=\"/\">Bintaro University Admission</a></h1></nav><div class=\"main-container\"><div class=\"main-card\"><div class=\"main-header\"><h2>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Bintaro University Admission - Login</title><style>\n\t\t\t\t* {\n\t\t\t\t\tmargin: 0;\n\t\t\t\t\tpadding: 0;\n\t\t\t\t\tbox-sizing: border-box;\n\t\t\t\t}\n\n\t\t\t\tbody {\n\t\t\t\t\tfont-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n\t\t\t\t\tbackground: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n\t\t\t\t\tmin-height: 100vh;\n\t\t\t\t\tdisplay: flex;\n\t\t\t\t\tflex-direction: column;\n\t\t\t\t}\n\n\t\t\t\t.navbar {\n\t\t\t\t\tbackground: rgba(255, 255, 255, 0.1);\n\t\t\t\t\tbackdrop-filter: blur(10px);\n\t\t\t\t\tpadding: 1rem 0;\n\t\t\t\t\tbox-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);\n\t\t\t\t\tborder-bottom: 1px solid rgba(255, 255, 255, 0.2);\n\t\t\t\t}\n\n\t\t\t\t.navbar h1 {\n\t\t\t\t\ttext-align: center;\n\t\t\t\t\tcolor: #fff;\n\t\t\t\t\tfont-size: 2rem;\n\t\t\t\t\tfont-weight: 600;\n\t\t\t\t\tletter-spacing: 0.5px;\n\t\t\t\t\ttext-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n\t\t\t\t}\n\n\t\t\t\t.main-container {\n\t\t\t\t\tflex: 1;\n\t\t\t\t\tdisplay: flex;\n\t\t\t\t\tjustify-content: center;\n\t\t\t\t\talign-items: center;\n\t\t\t\t\tpadding: 2rem;\n\t\t\t\t}\n\n\t\t\t\t.main-card {\n\t\t\t\t\tbackground: rgba(255, 255, 255, 0.95);\n\t\t\t\t\tpadding: 3rem;\n\t\t\t\t\tborder-radius: 20px;\n\t\t\t\t\tbox-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);\n\t\t\t\t\tbackdrop-filter: blur(10px);\n\t\t\t\t\tborder: 1px solid rgba(255, 255, 255, 0.3);\n\t\t\t\t\twidth: 100%;\n\t\t\t\t\tmax-width: 400px;\n\t\t\t\t\ttransform: translateY(-20px);\n\t\t\t\t\tanimation: fadeInUp 0.8s ease-out;\n\t\t\t\t}\n\n\t\t\t\t@keyframes fadeInUp {\n\t\t\t\t\tfrom {\n\t\t\t\t\t\topacity: 0;\n\t\t\t\t\t\ttransform: translateY(30px);\n\t\t\t\t\t}\n\t\t\t\t\tto {\n\t\t\t\t\t\topacity: 1;\n\t\t\t\t\t\ttransform: translateY(-20px);\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t.main-header {\n\t\t\t\t\ttext-align: center;\n\t\t\t\t\tmargin-bottom: 2rem;\n\t\t\t\t}\n\n\t\t\t\t.main-header h2 {\n\t\t\t\t\tcolor: #333;\n\t\t\t\t\tfont-size: 1.8rem;\n\t\t\t\t\tmargin-bottom: 0.5rem;\n\t\t\t\t}\n\n\t\t\t\t.main-header p {\n\t\t\t\t\tcolor: #666;\n\t\t\t\t\tfont-size: 0.9rem;\n\t\t\t\t}\n\n\t\t\t\t\n\t\t\t\t.main-icon {\n\t\t\t\t\tfont-size: 3rem;\n\t\t\t\t\tcolor: #667eea;\n\t\t\t\t\tmargin-bottom: 1rem;\n\t\t\t\t}\n\n\t\t\t\t.error-alert {\n\t\t\t\t\tbackground: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);\n\t\t\t\t\tcolor: white;\n\t\t\t\t\tpadding: 1rem;\n\t\t\t\t\tborder-radius: 12px;\n\t\t\t\t\tmargin-bottom: 1.5rem;\n\t\t\t\t\tborder: 1px solid rgba(255, 255, 255, 0.2);\n\t\t\t\t\tbox-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);\n\t\t\t\t\tdisplay: block;\n\t\t\t\t\tanimation: slideDown 0.4s ease-out;\n\t\t\t\t}\n\n\t\t\t\t@keyframes slideDown {\n\t\t\t\t\tfrom {\n\t\t\t\t\t\topacity: 0;\n\t\t\t\t\t\ttransform: translateY(-10px);\n\t\t\t\t\t}\n\t\t\t\t\tto {\n\t\t\t\t\t\topacity: 1;\n\t\t\t\t\t\ttransform: translateY(0);\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t.error-alert .alert-icon {\n\t\t\t\t\tdisplay: inline-block;\n\t\t\t\t\tmargin-right: 0.5rem;\n\t\t\t\t\tfont-weight: bold;\n\t\t\t\t}\n\n\t\t\t\t.error-alert .alert-message {\n\t\t\t\t\tfont-size: 0.9rem;\n\t\t\t\t\tfont-weight: 500;\n\t\t\t\t}\n\n\t\t\t\t.form-group {\n\t\t\t\t\tmargin-bottom: 1.5rem;\n\t\t\t\t}\n\n\t\t\t\t.form-group label {\n\t\t\t\t\tdisplay: block;\n\t\t\t\t\tmargin-bottom: 0.5rem;\n\t\t\t\t\tcolor: #333;\n\t\t\t\t\tfont-weight: 500;\n\t\t\t\t\tfont-size: 0.9rem;\n\t\t\t\t}\n\t\t\t</style></head><body><nav class=\"navbar\"><h1><a style=\"text-decoration: none; color: white\" href=\"/\">Bintaro University Admission</a></h1></nav><div class=\"main-container\"><div class=\"main-card\"><div class=\"main-header\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(props.FormTitle)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/auth_page_wrapper.templ`, Line: 224, Col: 27}
+		if props.UTF8Icon != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"main-icon\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var2 string
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(props.UTF8Icon)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/auth_page_wrapper.templ`, Line: 162, Col: 46}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<h2>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</h2></div>")
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(props.FormTitle)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/auth_page_wrapper.templ`, Line: 164, Col: 27}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h2>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if props.Instruction != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(props.Instruction)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/auth_page_wrapper.templ`, Line: 166, Col: 29}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if props.ErrorMessage != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Error Alert Section --> <div class=\"error-alert\" id=\"errorAlert\"><span class=\"alert-icon\">⚠</span> <span class=\"alert-message\" id=\"errorMessage\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"error-alert\" id=\"errorAlert\"><span class=\"alert-icon\">⚠</span> <span class=\"alert-message\" id=\"errorMessage\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(props.ErrorMessage)
+			var templ_7745c5c3_Var5 string
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(props.ErrorMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/auth_page_wrapper.templ`, Line: 230, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/auth_page_wrapper.templ`, Line: 172, Col: 73}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -75,7 +123,7 @@ func AuthPageWrapper(props AuthPageWrapperProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
