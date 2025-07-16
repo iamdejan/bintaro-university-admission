@@ -1,0 +1,152 @@
+package pages
+
+import "bintaro-university-admission/internal/ui/components"
+
+type DashboardProps struct {
+	FullName     string
+	HasTOTPSetup bool
+	ErrorMessage string
+}
+
+templ Dashboard(props DashboardProps) {
+	{{ dropDownItems := make([]templ.Component, 0) }}
+	if !props.HasTOTPSetup {
+		{{ dropDownItems = append(dropDownItems, totpSetupDropDownItem()) }}
+	}
+	{{ dropDownItems = append(dropDownItems, logoutDropDownItem()) }}
+	@components.PageWrapper(components.PageWrapperProps{
+		MainContent:   dashboardMainContent(props),
+		DropDownItems: dropDownItems,
+		ErrorMessage:  props.ErrorMessage,
+	})
+}
+
+templ dashboardMainContent(props DashboardProps) {
+	<div class="welcome-section">
+		<h2>Welcome, { props.FullName }</h2>
+		<p>Track your admission progress and stay updated with important notifications.</p>
+	</div>
+	<div class="notifications-section">
+		<h3>Profile Notifications</h3>
+		<div class="notification-card">
+			<div class="notification-title">Complete Your Profile</div>
+			<div class="notification-summary">
+				Your profile is currently 75% complete. Please upload your academic transcripts and personal statement to complete your application. Missing documents may delay the review process.
+			</div>
+			<button class="read-more-btn" onclick="readMore('profile')">Read More</button>
+		</div>
+		<div class="notification-card">
+			<div class="notification-title">Application Status Update</div>
+			<div class="notification-summary">
+				Your application has been received and is currently under review by our admissions committee. We will notify you of any updates within 2-3 business days.
+			</div>
+			<button class="read-more-btn" onclick="readMore('status')">Read More</button>
+		</div>
+		<div class="notification-card">
+			<div class="notification-title">Scholarship Opportunity</div>
+			<div class="notification-summary">
+				Based on your academic performance, you may be eligible for our Merit-Based Scholarship program. The application deadline is approaching soon.
+			</div>
+			<button class="read-more-btn" onclick="readMore('scholarship')">Read More</button>
+		</div>
+	</div>
+	<script>
+		function toggleDropdown() {
+			const dropdown = document.getElementById("dropdown");
+			const hamburgerBtn = document.querySelector(".hamburger-btn");
+
+			dropdown.classList.toggle("show");
+			hamburgerBtn.classList.toggle("active");
+		}
+
+		function readMore(type) {
+			let message = "";
+			switch (type) {
+				case "profile":
+					message =
+						"Profile Completion Details:\n\n" +
+						"✓ Personal Information: Complete\n" +
+						"✓ Contact Details: Complete\n" +
+						"✓ Educational Background: Complete\n" +
+						"✗ Academic Transcripts: Missing\n" +
+						"✗ Personal Statement: Missing\n" +
+						"✗ Letters of Recommendation: Missing\n\n" +
+						"Please upload the missing documents to complete your application.";
+					break;
+				case "status":
+					message =
+						"Application Status Details:\n\n" +
+						"Application ID: BU2025-001234\n" +
+						"Submitted: January 15, 2025\n" +
+						"Current Status: Under Review\n" +
+						"Reviewer: Dr. Sarah Johnson\n" +
+						"Expected Decision: January 25, 2025\n\n" +
+						"You will receive an email notification once the review is complete.";
+					break;
+				case "scholarship":
+					message =
+						"Scholarship Opportunity Details:\n\n" +
+						"Program: Merit-Based Scholarship\n" +
+						"Award Amount: Up to $10,000\n" +
+						"Eligibility: GPA 3.5 or higher\n" +
+						"Application Deadline: January 31, 2025\n" +
+						"Required Documents: Essay, Transcripts\n\n" +
+						"Click here to apply for the scholarship program.";
+					break;
+			}
+			alert(message);
+		}
+
+		// Close dropdown when clicking outside
+		document.addEventListener("click", function (event) {
+			const hamburgerMenu = document.querySelector(".hamburger-menu");
+			const dropdown = document.getElementById("dropdown");
+			const hamburgerBtn = document.querySelector(".hamburger-btn");
+
+			if (!hamburgerMenu.contains(event.target)) {
+				dropdown.classList.remove("show");
+				hamburgerBtn.classList.remove("active");
+			}
+		});
+
+		// Prevent dropdown from closing when clicking inside it
+		document.getElementById("dropdown").addEventListener("click", function (event) {
+			event.stopPropagation();
+		});
+	</script>
+}
+
+templ totpSetupDropDownItem() {
+	@components.DropDownItem(components.DropDownItemProps{
+		Link: "/totp-setup",
+		Text: "Enable 2FA",
+	})
+}
+
+templ logoutDropDownItem() {
+	@components.DropDownItem(components.DropDownItemProps{
+		ID:   "logout",
+		Text: "Logout",
+	})
+	<script>
+		function logout(e) {
+			e.preventDefault();
+
+			if (confirm("Are you sure you want to logout?")) {
+				window.location.href = '/logout';
+				return;
+			}
+
+			// Close dropdown after action
+			const dropdown = document.getElementById("dropdown");
+			const hamburgerBtn = document.querySelector(".hamburger-btn");
+			dropdown.classList.remove("show");
+			hamburgerBtn.classList.remove("active");
+		}
+
+		setTimeout(() => {
+			const logoutLink = document.querySelector("a#logout");
+			logoutLink.addEventListener("click", logout);
+		}, 0);
+	</script>
+}

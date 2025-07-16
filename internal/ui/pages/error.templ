@@ -1,0 +1,196 @@
+package pages
+
+import "bintaro-university-admission/internal/ui/components"
+
+templ Error() {
+	@components.PageWrapper(components.PageWrapperProps{
+		MainContent: errorMainContent(),
+		DropDownItems: []templ.Component{
+			components.DropDownItem(components.DropDownItemProps{
+				Link: "/login",
+				Text: "Login",
+			}),
+			components.DropDownItem(components.DropDownItemProps{
+				Link: "/register",
+				Text: "Register",
+			}),
+		},
+		ErrorMessage: "",
+	})
+}
+
+templ errorMainContent() {
+	<style>
+		.error-section {
+			background: rgba(255, 255, 255, 0.95);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(255, 255, 255, 0.3);
+			border-radius: 20px;
+			padding: 3rem 2rem;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			animation: fadeInUp 0.6s ease-out;
+		}
+
+		@keyframes fadeInUp {
+			from {
+				opacity: 0;
+				transform: translateY(30px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		.error-icon {
+			font-size: 4rem;
+			color: #667eea;
+			margin-bottom: 1rem;
+			animation: pulse 2s infinite;
+			text-align: center;
+		}
+
+		@keyframes pulse {
+			0%,
+			100% {
+				transform: scale(1);
+			}
+			50% {
+				transform: scale(1.05);
+			}
+		}
+
+		.error-title {
+			color: #333;
+			font-size: 2.5rem;
+			margin-bottom: 1rem;
+			font-weight: 600;
+			text-align: center;
+		}
+
+		.error-message {
+			color: #666;
+			font-size: 1.1rem;
+			margin-bottom: 2rem;
+			line-height: 1.6;
+		}
+
+		.action-buttons {
+			display: flex;
+			gap: 1rem;
+			justify-content: center;
+			flex-wrap: wrap;
+		}
+
+		.btn {
+			padding: 0.8rem 1.5rem;
+			border: none;
+			border-radius: 12px;
+			font-size: 1rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			text-decoration: none;
+			display: inline-block;
+			min-width: 120px;
+		}
+
+		.btn-primary {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: #fff;
+			box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+		}
+
+		.btn-primary:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+		}
+
+		.btn-secondary {
+			background: rgba(255, 255, 255, 0.9);
+			color: #333;
+			border: 1px solid rgba(102, 126, 234, 0.3);
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+			text-align: center;
+		}
+
+		.btn-secondary:hover {
+			background: rgba(102, 126, 234, 0.05);
+			transform: translateY(-2px);
+			box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+		}
+
+		.btn:active {
+			transform: translateY(0);
+		}
+
+		@media (max-width: 768px) {
+			.navbar {
+				padding: 1rem;
+			}
+
+			.navbar h1 {
+				font-size: 1.2rem;
+			}
+
+			.main-content {
+				padding: 1rem;
+			}
+
+			.error-section {
+				padding: 2rem 1.5rem;
+			}
+
+			.error-title {
+				font-size: 2rem;
+			}
+
+			.error-icon {
+				font-size: 3rem;
+			}
+
+			.action-buttons {
+				flex-direction: column;
+				align-items: center;
+			}
+
+		}
+	</style>
+	<div class="error-section">
+		<div class="error-icon">⚠️</div>
+		<h1 class="error-title">Oops! Something went wrong</h1>
+		<p class="error-message">
+			We're sorry, but the page you're looking for cannot be found or an unexpected error has occurred. Please try again or return to the homepage.
+		</p>
+		<div class="action-buttons">
+			<a href="/" class="btn btn-primary">Go to Homepage</a>
+			<a href="/login" class="btn btn-secondary">Login</a>
+		</div>
+	</div>
+	<script>
+		function toggleDropdown() {
+			const dropdown = document.getElementById("dropdown");
+			const hamburgerBtn = document.querySelector(".hamburger-btn");
+
+			dropdown.classList.toggle("show");
+			hamburgerBtn.classList.toggle("active");
+		}
+
+		// Close dropdown when clicking outside
+		document.addEventListener("click", function (event) {
+			const hamburgerMenu = document.querySelector(".hamburger-menu");
+			const dropdown = document.getElementById("dropdown");
+			const hamburgerBtn = document.querySelector(".hamburger-btn");
+
+			if (!hamburgerMenu.contains(event.target)) {
+				dropdown.classList.remove("show");
+				hamburgerBtn.classList.remove("active");
+			}
+		});
+
+		// Prevent dropdown from closing when clicking inside it
+		document.getElementById("dropdown").addEventListener("click", function (event) {
+			event.stopPropagation();
+		});
+	</script>
+}

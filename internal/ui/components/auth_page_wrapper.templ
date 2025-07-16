@@ -1,6 +1,14 @@
-package pages
+package components
 
-templ Login(errorMessage string) {
+type AuthPageWrapperProps struct {
+	UTF8Icon     string
+	FormTitle    string
+	Instruction  string
+	ErrorMessage string
+	MainForm     templ.Component
+}
+
+templ AuthPageWrapper(props AuthPageWrapperProps) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -39,7 +47,7 @@ templ Login(errorMessage string) {
 					text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 				}
 
-				.login-container {
+				.main-container {
 					flex: 1;
 					display: flex;
 					justify-content: center;
@@ -47,7 +55,7 @@ templ Login(errorMessage string) {
 					padding: 2rem;
 				}
 
-				.login-card {
+				.main-card {
 					background: rgba(255, 255, 255, 0.95);
 					padding: 3rem;
 					border-radius: 20px;
@@ -71,20 +79,27 @@ templ Login(errorMessage string) {
 					}
 				}
 
-				.login-header {
+				.main-header {
 					text-align: center;
 					margin-bottom: 2rem;
 				}
 
-				.login-header h2 {
+				.main-header h2 {
 					color: #333;
 					font-size: 1.8rem;
 					margin-bottom: 0.5rem;
 				}
 
-				.login-header p {
+				.main-header p {
 					color: #666;
 					font-size: 0.9rem;
+				}
+
+				
+				.main-icon {
+					font-size: 3rem;
+					color: #667eea;
+					margin-bottom: 1rem;
 				}
 
 				.error-alert {
@@ -133,51 +148,6 @@ templ Login(errorMessage string) {
 					font-size: 0.9rem;
 				}
 
-				.form-group input {
-					width: 100%;
-					padding: 0.8rem 1rem;
-					border: 2px solid #e1e5e9;
-					border-radius: 12px;
-					font-size: 1rem;
-					transition: all 0.3s ease;
-					background: rgba(255, 255, 255, 0.9);
-				}
-
-				.form-group input:focus {
-					outline: none;
-					border-color: #667eea;
-					box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-					transform: translateY(-1px);
-				}
-
-				.form-group input:hover {
-					border-color: #c1c7d0;
-				}
-
-				.login-btn {
-					width: 100%;
-					padding: 0.9rem;
-					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-					color: #fff;
-					border: none;
-					border-radius: 12px;
-					font-size: 1rem;
-					font-weight: 600;
-					cursor: pointer;
-					transition: all 0.3s ease;
-					box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-					margin-top: 1rem;
-				}
-
-				.login-btn:hover {
-					transform: translateY(-2px);
-					box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-				}
-
-				.login-btn:active {
-					transform: translateY(0);
-				}
-
 				.link-below-form {
 					text-align: center;
 					margin-top: 1.5rem;
@@ -194,16 +164,6 @@ templ Login(errorMessage string) {
 					color: #764ba2;
 					text-decoration: underline;
 				}
-
-				@media (max-width: 480px) {
-					.login-card {
-						padding: 2rem;
-						margin: 1rem;
-					}
-					.navbar h1 {
-						font-size: 1.5rem;
-					}
-				}
 			</style>
 		</head>
 		<body>
@@ -212,54 +172,26 @@ templ Login(errorMessage string) {
 					<a style="text-decoration: none; color: white" href="/">Bintaro University Admission</a>
 				</h1>
 			</nav>
-			<div class="login-container">
-				<div class="login-card">
-					<div class="login-header">
-						<h2>Login</h2>
+			<div class="main-container">
+				<div class="main-card">
+					<div class="main-header">
+						if props.UTF8Icon != "" {
+							<div class="main-icon">{ props.UTF8Icon }</div>
+						}
+						<h2>{ props.FormTitle }</h2>
+						if props.Instruction != "" {
+							<p>{ props.Instruction }</p>
+						}
 					</div>
-					if errorMessage != "" {
-						<!-- Error Alert Section -->
+					if props.ErrorMessage != "" {
 						<div class="error-alert" id="errorAlert">
 							<span class="alert-icon">⚠</span>
-							<span class="alert-message" id="errorMessage">{ errorMessage }</span>
+							<span class="alert-message" id="errorMessage">{ props.ErrorMessage }</span>
 						</div>
 					}
-					<form action="/login" id="loginForm" method="post">
-						<div class="form-group">
-							<label for="email">Email Address</label>
-							<input type="email" id="email" name="email" required placeholder="Enter your email"/>
-						</div>
-						<div class="form-group">
-							<label for="password">Password</label>
-							<input type="password" id="password" name="password" required placeholder="Enter your password"/>
-						</div>
-						<button type="submit" class="login-btn">Sign In</button>
-					</form>
-					<div class="link-below-form">
-						<a href="#" onclick="showForgotPassword()">Forgot your password?</a>
-					</div>
-					<div class="link-below-form">
-						<a href="/register">Do not have any account?</a>
-					</div>
+					@props.MainForm
 				</div>
 			</div>
-			<script>
-				function showForgotPassword() {
-					alert("Forgot password functionality would be implemented here.");
-				}
-
-				// Add subtle animations to form inputs
-				document.querySelectorAll("input").forEach((input) => {
-					input.addEventListener("focus", function () {
-						this.parentElement.style.transform = "translateY(-2px)";
-					});
-
-					input.addEventListener("blur", function () {
-						this.parentElement.style.transform = "translateY(0)";
-					});
-				});
-
-			</script>
 		</body>
 	</html>
 }

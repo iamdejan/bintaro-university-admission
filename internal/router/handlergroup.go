@@ -8,11 +8,11 @@ import (
 	"slices"
 	"time"
 
-	"bintaro-university-admission/internal/pages"
 	"bintaro-university-admission/internal/password"
 	"bintaro-university-admission/internal/random"
 	"bintaro-university-admission/internal/store"
 	"bintaro-university-admission/internal/totp"
+	"bintaro-university-admission/internal/ui/pages"
 
 	"github.com/a-h/templ"
 	"github.com/google/uuid"
@@ -279,30 +279,7 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user, _ := ctx.Value(userCtx{}).(*store.User)
 
-	existingMFA, err := h.mfaStore.GetByUserID(ctx, user.ID)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		slog.ErrorContext(
-			ctx,
-			"Failed to get MFA from database",
-			logKeyError,
-			err,
-		)
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
-		return
-	}
-	if existingMFA != nil {
-		logAndSetErrorMessageCookie(
-			w,
-			r,
-			"MFA already exists",
-			errors.New("mfa already exists"),
-			"MFA already exists",
-		)
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
-		return
-	}
-
-	if err = h.mfaStore.DeleteByUserID(ctx, user.ID); err != nil &&
+	if err := h.mfaStore.DeleteByUserID(ctx, user.ID); err != nil &&
 		!errors.Is(err, sql.ErrNoRows) {
 		slog.ErrorContext(
 			ctx,
@@ -320,7 +297,7 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 		UserID:       user.ID,
 		SecretBase32: secretBase32,
 	}
-	if err = h.mfaStore.Insert(ctx, mfa); err != nil {
+	if err := h.mfaStore.Insert(ctx, mfa); err != nil {
 		slog.ErrorContext(
 			ctx,
 			"Failed to insert MFA to database",
@@ -348,10 +325,6 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 		SecretBase32:      secretBase32,
 	}
 	totpSetup := pages.TOTPSetup(props)
-
-	if err = h.generateAndSetToken(w, r, user.ID, store.SessionTypeOTP); err != nil {
-		return
-	}
 	templ.Handler(totpSetup).ServeHTTP(w, r)
 }
 
@@ -444,9 +417,6 @@ func (h *HandlerGroupImpl) CancelTOTPSetup(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := h.generateAndSetToken(w, r, user.ID, store.SessionTypeOTP); err != nil {
-		return
-	}
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 

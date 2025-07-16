@@ -1,0 +1,53 @@
+package pages
+
+import "bintaro-university-admission/internal/ui/components"
+
+templ Index() {
+	@components.PageWrapper(components.PageWrapperProps{
+		MainContent: indexMainContent(),
+		DropDownItems: []templ.Component{
+			components.DropDownItem(components.DropDownItemProps{
+				Link: "/login",
+				Text: "Login",
+			}),
+			components.DropDownItem(components.DropDownItemProps{
+				Link: "/register",
+				Text: "Register",
+			}),
+		},
+		ErrorMessage: "",
+	})
+}
+
+templ indexMainContent() {
+	<div class="welcome-section">
+		<h2>Welcome to Bintaro University Admission</h2>
+		<p>Track your admission progress and stay updated with important notifications.</p>
+	</div>
+	<script>
+		function toggleDropdown() {
+			const dropdown = document.getElementById("dropdown");
+			const hamburgerBtn = document.querySelector(".hamburger-btn");
+
+			dropdown.classList.toggle("show");
+			hamburgerBtn.classList.toggle("active");
+		}
+
+		// Close dropdown when clicking outside
+		document.addEventListener("click", function (event) {
+			const hamburgerMenu = document.querySelector(".hamburger-menu");
+			const dropdown = document.getElementById("dropdown");
+			const hamburgerBtn = document.querySelector(".hamburger-btn");
+
+			if (!hamburgerMenu.contains(event.target)) {
+				dropdown.classList.remove("show");
+				hamburgerBtn.classList.remove("active");
+			}
+		});
+
+		// Prevent dropdown from closing when clicking inside it
+		document.getElementById("dropdown").addEventListener("click", function (event) {
+			event.stopPropagation();
+		});
+	</script>
+}
