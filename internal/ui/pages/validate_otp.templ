@@ -117,7 +117,7 @@ templ validateOTPMainForm() {
 	<form action="/login/validate-otp" id="totpForm" method="post">
 		<div class="form-group">
 			<label for="code">Authentication Code</label>
-			<input type="text" id="otpCode" name="otp_code" class="totp-input" required placeholder={ generatePlaceholder(totp.DefaultOTPDigits) } maxlength={ totp.DefaultOTPDigits } pattern="[0-9]{8}" autocomplete="one-time-code"/>
+			<input type="text" id="otpCode" name="otp_code" class="totp-input" required placeholder={ generatePlaceholder(totp.DefaultOTPDigits) } maxlength={ totp.DefaultOTPDigits } pattern={ generateRegexValidation(totp.DefaultOTPDigits) } autocomplete="one-time-code"/>
 		</div>
 		<button type="submit" class="verify-btn" id="verifyBtn">Verify Code</button>
 	</form>

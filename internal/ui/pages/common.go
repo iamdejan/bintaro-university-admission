@@ -1,6 +1,9 @@
 package pages
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 func generatePlaceholder(digits int) string {
 	sb := strings.Builder{}
@@ -9,4 +12,8 @@ func generatePlaceholder(digits int) string {
 	}
 
 	return sb.String()
+}
+
+func generateRegexValidation(digits int) string {
+	return fmt.Sprintf("[0-9]{%d}", digits)
 }

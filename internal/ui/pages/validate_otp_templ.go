@@ -110,7 +110,20 @@ func validateOTPMainForm() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" pattern=\"[0-9]{8}\" autocomplete=\"one-time-code\"></div><button type=\"submit\" class=\"verify-btn\" id=\"verifyBtn\">Verify Code</button></form><div class=\"link-below-form\"><a href=\"/login\">← Back to Login</a></div><script>\n\t\tconst maxLength = Number(document.querySelector(\"input#maxLength\").value);\n\t\tconst totpInput = document.getElementById(\"otpCode\");\n\t\tconst verifyBtn = document.getElementById(\"verifyBtn\");\n\t\tconst countdownElement = document.getElementById(\"countdown\");\n\n\t\t// Format input to only accept numbers\n\t\ttotpInput.addEventListener(\"input\", function (e) {\n\t\t\tlet value = e.target.value.replace(/[^0-9]/g, \"\");\n\t\t\tif (value.length > maxLength) {\n\t\t\t\tvalue = value.slice(0, maxLength);\n\t\t\t}\n\t\t\te.target.value = value;\n\n\t\t\t// Enable/disable verify button based on input length\n\t\t\tif (value.length === maxLength) {\n\t\t\t\tverifyBtn.disabled = false;\n\t\t\t} else {\n\t\t\t\tverifyBtn.disabled = true;\n\t\t\t}\n\t\t});\n\n\t\t// Auto-submit when \"max length\" digits are entered\n\t\ttotpInput.addEventListener(\"input\", function (e) {\n\t\t\tif (e.target.value.length === maxLength) {\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tdocument.getElementById(\"totpForm\").submit();\n\t\t\t\t}, 500);\n\t\t\t}\n\t\t});\n\n\t\t// Add subtle animations to form inputs\n\t\ttotpInput.addEventListener(\"focus\", function () {\n\t\t\tthis.parentElement.style.transform = \"translateY(-2px)\";\n\t\t});\n\n\t\ttotpInput.addEventListener(\"blur\", function () {\n\t\t\tthis.parentElement.style.transform = \"translateY(0)\";\n\t\t});\n\n\t\t// Initialize button state\n\t\tverifyBtn.disabled = true;\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" pattern=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(generateRegexValidation(totp.DefaultOTPDigits))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/validate_otp.templ`, Line: 120, Col: 230}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" autocomplete=\"one-time-code\"></div><button type=\"submit\" class=\"verify-btn\" id=\"verifyBtn\">Verify Code</button></form><div class=\"link-below-form\"><a href=\"/login\">← Back to Login</a></div><script>\n\t\tconst maxLength = Number(document.querySelector(\"input#maxLength\").value);\n\t\tconst totpInput = document.getElementById(\"otpCode\");\n\t\tconst verifyBtn = document.getElementById(\"verifyBtn\");\n\t\tconst countdownElement = document.getElementById(\"countdown\");\n\n\t\t// Format input to only accept numbers\n\t\ttotpInput.addEventListener(\"input\", function (e) {\n\t\t\tlet value = e.target.value.replace(/[^0-9]/g, \"\");\n\t\t\tif (value.length > maxLength) {\n\t\t\t\tvalue = value.slice(0, maxLength);\n\t\t\t}\n\t\t\te.target.value = value;\n\n\t\t\t// Enable/disable verify button based on input length\n\t\t\tif (value.length === maxLength) {\n\t\t\t\tverifyBtn.disabled = false;\n\t\t\t} else {\n\t\t\t\tverifyBtn.disabled = true;\n\t\t\t}\n\t\t});\n\n\t\t// Auto-submit when \"max length\" digits are entered\n\t\ttotpInput.addEventListener(\"input\", function (e) {\n\t\t\tif (e.target.value.length === maxLength) {\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tdocument.getElementById(\"totpForm\").submit();\n\t\t\t\t}, 500);\n\t\t\t}\n\t\t});\n\n\t\t// Add subtle animations to form inputs\n\t\ttotpInput.addEventListener(\"focus\", function () {\n\t\t\tthis.parentElement.style.transform = \"translateY(-2px)\";\n\t\t});\n\n\t\ttotpInput.addEventListener(\"blur\", function () {\n\t\t\tthis.parentElement.style.transform = \"translateY(0)\";\n\t\t});\n\n\t\t// Initialize button state\n\t\tverifyBtn.disabled = true;\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
