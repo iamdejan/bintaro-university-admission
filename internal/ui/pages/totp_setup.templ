@@ -285,7 +285,7 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 					Enter the 6-digit code from your authenticator app to complete the setup:
 					<div class="otp-input-group">
 						<label for="otpCode">Authentication Code</label>
-						<input type="text" id="otpCode" class="otp-input" maxlength="6" placeholder="000000" onkeyup="validateOTP()"/>
+						<input type="text" id="otpCode" class="otp-input" maxlength="8" placeholder="00000000" onkeyup="validateOTP()"/>
 					</div>
 					<button class="verify-btn" id="verifyBtn" onclick="verifyOTP()" disabled>
 						Verify & Enable 2FA
@@ -295,6 +295,8 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 		</div>
 	</div>
 	<script>
+		const maxLength = 8;
+
 		function copySecret() {
 			const secretKey = document.getElementById("secretKey").textContent;
 			navigator.clipboard
@@ -323,8 +325,8 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 				otpInput.value = cleanOTP;
 			}
 
-			// Enable verify button if OTP is 6 digits
-			if (cleanOTP.length === 6) {
+			// Enable verify button if OTP is "max length" digits
+			if (cleanOTP.length === maxLength) {
 				verifyBtn.disabled = false;
 			} else {
 				verifyBtn.disabled = true;
@@ -335,8 +337,8 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 			const otpCode = document.getElementById("otpCode").value;
 			const verifyBtn = document.getElementById("verifyBtn");
 
-			if (otpCode.length !== 6) {
-				alert("Please enter a 6-digit authentication code.");
+			if (otpCode.length !== maxLength) {
+				alert("Please enter a 8-digit authentication code.");
 				return;
 			}
 
@@ -351,8 +353,10 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 				body: body,
 
 			}).then((response) => {
-				alert("Success adding 2FA!");
-				window.location.href = response.url;
+				if (response.url = "/dashboard") {
+					alert("Success adding 2FA!");
+					window.location.href = response.url;
+				}
 			});
 		}
 
