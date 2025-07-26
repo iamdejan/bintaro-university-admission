@@ -1,6 +1,7 @@
 package pages
 
 import "bintaro-university-admission/internal/ui/components"
+import "bintaro-university-admission/internal/totp"
 
 type TOTPSetupProps struct {
 	QRCodeImageBase64 string
@@ -16,6 +17,7 @@ templ TOTPSetup(props TOTPSetupProps) {
 }
 
 templ totpSetupMainContent(props TOTPSetupProps) {
+	<input type="hidden" id="maxLength" value={ totp.DefaultOTPDigits } />
 	<style>
 		.main-container {
 			width: 100%;
@@ -282,10 +284,10 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 				<div class="step-number">4</div>
 				<div class="step-title">Verify Setup</div>
 				<div class="step-content">
-					Enter the 6-digit code from your authenticator app to complete the setup:
+					Enter the { totp.DefaultOTPDigits }-digit code from your authenticator app to complete the setup:
 					<div class="otp-input-group">
 						<label for="otpCode">Authentication Code</label>
-						<input type="text" id="otpCode" class="otp-input" maxlength="8" placeholder="00000000" onkeyup="validateOTP()"/>
+						<input type="text" id="otpCode" class="otp-input" maxlength={ totp.DefaultOTPDigits } placeholder={ generatePlaceholder(totp.DefaultOTPDigits) } onkeyup="validateOTP()"/>
 					</div>
 					<button class="verify-btn" id="verifyBtn" onclick="verifyOTP()" disabled>
 						Verify & Enable 2FA
@@ -295,7 +297,7 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 		</div>
 	</div>
 	<script>
-		const maxLength = 8;
+		const maxLength = Number(document.querySelector("input#maxLength").value);
 
 		function copySecret() {
 			const secretKey = document.getElementById("secretKey").textContent;
@@ -338,7 +340,7 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 			const verifyBtn = document.getElementById("verifyBtn");
 
 			if (otpCode.length !== maxLength) {
-				alert("Please enter a 8-digit authentication code.");
+				alert(`Please enter a ${maxLength}-digit authentication code.`);
 				return;
 			}
 

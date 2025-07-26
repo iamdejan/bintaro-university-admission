@@ -15,7 +15,7 @@ const (
 	validStartStep int64 = -1
 	validEndStep   int64 = 1
 
-	defaultOTPDigits = 8
+	DefaultOTPDigits = 8
 	defaultAlgo      = "SHA512"
 
 	issuer = "bintaro-university-admission"
@@ -40,7 +40,7 @@ func generateURL(secretBase32 string, email string) string {
 		"issuer":    []string{issuer},
 		"secret":    []string{secretBase32},
 		"algorithm": []string{defaultAlgo},
-		"digits":    []string{strconv.FormatUint(defaultOTPDigits, 10)},
+		"digits":    []string{strconv.FormatUint(DefaultOTPDigits, 10)},
 		"period":    []string{strconv.FormatInt(validityPeriodInSeconds, 10)},
 	}
 	return fmt.Sprintf(

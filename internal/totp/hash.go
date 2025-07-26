@@ -43,7 +43,7 @@ var printFormatMap = map[int]string{
 }
 
 func truncateHashCodeToToken(hashCode uint64) string {
-	modulo := uint64(math.Pow10(defaultOTPDigits))
+	modulo := uint64(math.Pow10(DefaultOTPDigits))
 	hashCode %= modulo
-	return fmt.Sprintf(printFormatMap[defaultOTPDigits], hashCode)
+	return fmt.Sprintf(printFormatMap[DefaultOTPDigits], hashCode)
 }
