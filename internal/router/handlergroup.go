@@ -308,7 +308,7 @@ func (h *HandlerGroupImpl) TOTPSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	qrCode, err := totp.GenerateQRCode(secretBase32, user.ID)
+	qrCode, err := totp.GenerateQRCode(secretBase32, user.Email)
 	if err != nil {
 		slog.ErrorContext(
 			ctx,

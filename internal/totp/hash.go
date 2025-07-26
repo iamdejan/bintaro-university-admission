@@ -2,7 +2,6 @@ package totp
 
 import (
 	"crypto/hmac"
-	"crypto/sha1" //nolint:gosec // this is only for OTP generation
 	"encoding/base32"
 	"encoding/binary"
 	"fmt"
@@ -20,7 +19,7 @@ func generateHash(secretBase32 string, counterValue uint64) ([]byte, error) {
 	counterBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(counterBytes, counterValue)
 
-	h := hmac.New(sha1.New, secretBytes)
+	h := hmac.New(algoMap[defaultAlgo], secretBytes)
 	if _, err = h.Write(counterBytes); err != nil {
 		return nil, err
 	}
@@ -38,10 +37,13 @@ func truncateHashToHashCode(hash []byte) uint64 {
 	return codeNumber & 0b1111111111111111111111111111111
 }
 
-const otpDigits = 6
+var printFormatMap = map[int]string{
+	6: "%06d",
+	8: "%08d",
+}
 
 func truncateHashCodeToToken(hashCode uint64) string {
-	oneMillion := uint64(math.Pow10(otpDigits))
-	hashCode %= oneMillion
-	return fmt.Sprintf("%06d", hashCode)
+	modulo := uint64(math.Pow10(DefaultOTPDigits))
+	hashCode %= modulo
+	return fmt.Sprintf(printFormatMap[DefaultOTPDigits], hashCode)
 }

@@ -1,8 +1,10 @@
 package totp
 
 import (
+	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
+	"hash"
 	"net/url"
 	"strconv"
 
@@ -12,10 +14,19 @@ import (
 const (
 	validStartStep int64 = -1
 	validEndStep   int64 = 1
+
+	DefaultOTPDigits = 8
+	defaultAlgo      = "SHA512"
+
+	issuer = "bintaro-university-admission"
 )
 
-func GenerateQRCode(secretBase32 string, userID string) (string, error) {
-	url := generateURL(secretBase32, userID)
+var algoMap = map[string]func() hash.Hash{
+	"SHA512": sha512.New,
+}
+
+func GenerateQRCode(secretBase32 string, email string) (string, error) {
+	url := generateURL(secretBase32, email)
 	png, err := qrcode.Encode(url, qrcode.Low, 256)
 	if err != nil {
 		return "", err
@@ -24,17 +35,17 @@ func GenerateQRCode(secretBase32 string, userID string) (string, error) {
 	return "data:image/png;base64," + base64.StdEncoding.EncodeToString(png), nil
 }
 
-func generateURL(secretBase32 string, userID string) string {
+func generateURL(secretBase32 string, email string) string {
 	params := url.Values{
-		"issuer":    []string{"bintaro-university-admission"},
+		"issuer":    []string{issuer},
 		"secret":    []string{secretBase32},
-		"algorithm": []string{"SHA1"},
-		"digits":    []string{"6"},
+		"algorithm": []string{defaultAlgo},
+		"digits":    []string{strconv.FormatUint(DefaultOTPDigits, 10)},
 		"period":    []string{strconv.FormatInt(validityPeriodInSeconds, 10)},
 	}
 	return fmt.Sprintf(
 		"otpauth://totp/bintaro-university-admission:%s?%s",
-		url.QueryEscape(userID),
+		url.QueryEscape(email),
 		params.Encode(),
 	)
 }

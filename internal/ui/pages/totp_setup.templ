@@ -1,6 +1,9 @@
 package pages
 
-import "bintaro-university-admission/internal/ui/components"
+import (
+	"bintaro-university-admission/internal/totp"
+	"bintaro-university-admission/internal/ui/components"
+)
 
 type TOTPSetupProps struct {
 	QRCodeImageBase64 string
@@ -16,6 +19,7 @@ templ TOTPSetup(props TOTPSetupProps) {
 }
 
 templ totpSetupMainContent(props TOTPSetupProps) {
+	<input type="hidden" id="maxLength" value={ totp.DefaultOTPDigits }/>
 	<style>
 		.main-container {
 			width: 100%;
@@ -282,10 +286,10 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 				<div class="step-number">4</div>
 				<div class="step-title">Verify Setup</div>
 				<div class="step-content">
-					Enter the 6-digit code from your authenticator app to complete the setup:
+					Enter the { totp.DefaultOTPDigits }-digit code from your authenticator app to complete the setup:
 					<div class="otp-input-group">
 						<label for="otpCode">Authentication Code</label>
-						<input type="text" id="otpCode" class="otp-input" maxlength="6" placeholder="000000" onkeyup="validateOTP()"/>
+						<input type="text" id="otpCode" class="otp-input" maxlength={ totp.DefaultOTPDigits } placeholder={ generatePlaceholder(totp.DefaultOTPDigits) } onkeyup="validateOTP()"/>
 					</div>
 					<button class="verify-btn" id="verifyBtn" onclick="verifyOTP()" disabled>
 						Verify & Enable 2FA
@@ -295,6 +299,8 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 		</div>
 	</div>
 	<script>
+		const maxLength = Number(document.querySelector("input#maxLength").value);
+
 		function copySecret() {
 			const secretKey = document.getElementById("secretKey").textContent;
 			navigator.clipboard
@@ -323,8 +329,8 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 				otpInput.value = cleanOTP;
 			}
 
-			// Enable verify button if OTP is 6 digits
-			if (cleanOTP.length === 6) {
+			// Enable verify button if OTP is "max length" digits
+			if (cleanOTP.length === maxLength) {
 				verifyBtn.disabled = false;
 			} else {
 				verifyBtn.disabled = true;
@@ -335,8 +341,8 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 			const otpCode = document.getElementById("otpCode").value;
 			const verifyBtn = document.getElementById("verifyBtn");
 
-			if (otpCode.length !== 6) {
-				alert("Please enter a 6-digit authentication code.");
+			if (otpCode.length !== maxLength) {
+				alert(`Please enter a ${maxLength}-digit authentication code.`);
 				return;
 			}
 
@@ -351,8 +357,10 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 				body: body,
 
 			}).then((response) => {
-				alert("Success adding 2FA!");
-				window.location.href = response.url;
+				if (response.url = "/dashboard") {
+					alert("Success adding 2FA!");
+					window.location.href = response.url;
+				}
 			});
 		}
 
@@ -372,7 +380,7 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 
 templ goBackDropDownItem() {
 	@components.DropDownItem(components.DropDownItemProps{
-		ID:   "go-back",
+		ID:   "goBack",
 		Text: "← Back to Dashboard",
 	})
 	<script>
@@ -387,7 +395,7 @@ templ goBackDropDownItem() {
 			}
 		}
 
-		document.querySelector("a#go-back").addEventListener("click", () => {
+		document.querySelector("a#goBack").addEventListener("click", () => {
 			goBack();
 		});
 	</script>
