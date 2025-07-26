@@ -8,8 +8,10 @@ package pages
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "bintaro-university-admission/internal/ui/components"
-import "bintaro-university-admission/internal/totp"
+import (
+	"bintaro-university-admission/internal/totp"
+	"bintaro-university-admission/internal/ui/components"
+)
 
 type TOTPSetupProps struct {
 	QRCodeImageBase64 string
@@ -77,7 +79,7 @@ func totpSetupMainContent(props TOTPSetupProps) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(totp.DefaultOTPDigits)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 20, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 22, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -90,7 +92,7 @@ func totpSetupMainContent(props TOTPSetupProps) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-image: url(" + props.QRCodeImageBase64 + ")")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 265, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 267, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -103,7 +105,7 @@ func totpSetupMainContent(props TOTPSetupProps) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(props.SecretBase32)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 276, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 278, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -116,7 +118,7 @@ func totpSetupMainContent(props TOTPSetupProps) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(totp.DefaultOTPDigits)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 287, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 289, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -129,7 +131,7 @@ func totpSetupMainContent(props TOTPSetupProps) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(totp.DefaultOTPDigits)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 290, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 292, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -142,7 +144,7 @@ func totpSetupMainContent(props TOTPSetupProps) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(generatePlaceholder(totp.DefaultOTPDigits))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 290, Col: 148}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/totp_setup.templ`, Line: 292, Col: 148}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -178,13 +180,13 @@ func goBackDropDownItem() templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = components.DropDownItem(components.DropDownItemProps{
-			ID:   "go-back",
+			ID:   "goBack",
 			Text: "← Back to Dashboard",
 		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<script>\n\t\tfunction goBack() {\n\t\t\tif (confirm(\"Are you sure you want to go back? Your 2FA setup will not be saved.\")) {\n\t\t\t\tfetch(\"/totp-setup\", {\n\t\t\t\t\tmethod: \"DELETE\",\n\t\t\t\t\tredirect: \"follow\"\n\t\t\t\t}).then((response) => {\n\t\t\t\t\twindow.location.href = response.url;\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\n\t\tdocument.querySelector(\"a#go-back\").addEventListener(\"click\", () => {\n\t\t\tgoBack();\n\t\t});\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<script>\n\t\tfunction goBack() {\n\t\t\tif (confirm(\"Are you sure you want to go back? Your 2FA setup will not be saved.\")) {\n\t\t\t\tfetch(\"/totp-setup\", {\n\t\t\t\t\tmethod: \"DELETE\",\n\t\t\t\t\tredirect: \"follow\"\n\t\t\t\t}).then((response) => {\n\t\t\t\t\twindow.location.href = response.url;\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\n\t\tdocument.querySelector(\"a#goBack\").addEventListener(\"click\", () => {\n\t\t\tgoBack();\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

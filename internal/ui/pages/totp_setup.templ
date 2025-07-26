@@ -1,7 +1,9 @@
 package pages
 
-import "bintaro-university-admission/internal/ui/components"
-import "bintaro-university-admission/internal/totp"
+import (
+	"bintaro-university-admission/internal/totp"
+	"bintaro-university-admission/internal/ui/components"
+)
 
 type TOTPSetupProps struct {
 	QRCodeImageBase64 string
@@ -17,7 +19,7 @@ templ TOTPSetup(props TOTPSetupProps) {
 }
 
 templ totpSetupMainContent(props TOTPSetupProps) {
-	<input type="hidden" id="maxLength" value={ totp.DefaultOTPDigits } />
+	<input type="hidden" id="maxLength" value={ totp.DefaultOTPDigits }/>
 	<style>
 		.main-container {
 			width: 100%;
@@ -378,7 +380,7 @@ templ totpSetupMainContent(props TOTPSetupProps) {
 
 templ goBackDropDownItem() {
 	@components.DropDownItem(components.DropDownItemProps{
-		ID:   "go-back",
+		ID:   "goBack",
 		Text: "← Back to Dashboard",
 	})
 	<script>
@@ -393,7 +395,7 @@ templ goBackDropDownItem() {
 			}
 		}
 
-		document.querySelector("a#go-back").addEventListener("click", () => {
+		document.querySelector("a#goBack").addEventListener("click", () => {
 			goBack();
 		});
 	</script>

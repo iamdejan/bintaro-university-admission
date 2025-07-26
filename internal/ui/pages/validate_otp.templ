@@ -1,18 +1,24 @@
 package pages
 
-import "bintaro-university-admission/internal/ui/components"
+import (
+	"fmt"
+
+	"bintaro-university-admission/internal/totp"
+	"bintaro-university-admission/internal/ui/components"
+)
 
 templ ValidateOTP(errorMessage string) {
 	@components.AuthPageWrapper(components.AuthPageWrapperProps{
 		UTF8Icon:     "🔐",
 		FormTitle:    "Validate OTP",
-		Instruction:  "Enter the 6-digit code from your authenticator app",
+		Instruction:  fmt.Sprintf("Enter the %d-digit code from your authenticator app", totp.DefaultOTPDigits),
 		ErrorMessage: errorMessage,
 		MainForm:     validateOTPMainForm(),
 	})
 }
 
 templ validateOTPMainForm() {
+	<input type="hidden" id="maxLength" value={ totp.DefaultOTPDigits }/>
 	<style>
 		.totp-input {
 			width: 100%;
@@ -111,7 +117,7 @@ templ validateOTPMainForm() {
 	<form action="/login/validate-otp" id="totpForm" method="post">
 		<div class="form-group">
 			<label for="code">Authentication Code</label>
-			<input type="text" id="otpCode" name="otp_code" class="totp-input" required placeholder="00000000" maxlength="8" pattern="[0-9]{8}" autocomplete="one-time-code"/>
+			<input type="text" id="otpCode" name="otp_code" class="totp-input" required placeholder={ generatePlaceholder(totp.DefaultOTPDigits) } maxlength={ totp.DefaultOTPDigits } pattern="[0-9]{8}" autocomplete="one-time-code"/>
 		</div>
 		<button type="submit" class="verify-btn" id="verifyBtn">Verify Code</button>
 	</form>
@@ -119,11 +125,10 @@ templ validateOTPMainForm() {
 		<a href="/login">← Back to Login</a>
 	</div>
 	<script>
-		// Auto-format TOTP input
+		const maxLength = Number(document.querySelector("input#maxLength").value);
 		const totpInput = document.getElementById("otpCode");
 		const verifyBtn = document.getElementById("verifyBtn");
 		const countdownElement = document.getElementById("countdown");
-		const maxLength = 8;
 
 		// Format input to only accept numbers
 		totpInput.addEventListener("input", function (e) {

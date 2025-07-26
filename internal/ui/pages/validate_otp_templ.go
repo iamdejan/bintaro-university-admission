@@ -8,7 +8,12 @@ package pages
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "bintaro-university-admission/internal/ui/components"
+import (
+	"fmt"
+
+	"bintaro-university-admission/internal/totp"
+	"bintaro-university-admission/internal/ui/components"
+)
 
 func ValidateOTP(errorMessage string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -34,7 +39,7 @@ func ValidateOTP(errorMessage string) templ.Component {
 		templ_7745c5c3_Err = components.AuthPageWrapper(components.AuthPageWrapperProps{
 			UTF8Icon:     "🔐",
 			FormTitle:    "Validate OTP",
-			Instruction:  "Enter the 6-digit code from your authenticator app",
+			Instruction:  fmt.Sprintf("Enter the %d-digit code from your authenticator app", totp.DefaultOTPDigits),
 			ErrorMessage: errorMessage,
 			MainForm:     validateOTPMainForm(),
 		}).Render(ctx, templ_7745c5c3_Buffer)
@@ -66,7 +71,46 @@ func validateOTPMainForm() templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<style>\n\t\t.totp-input {\n\t\t\twidth: 100%;\n\t\t\tpadding: 1rem;\n\t\t\tborder: 2px solid #e1e5e9;\n\t\t\tborder-radius: 12px;\n\t\t\tfont-size: 1.2rem;\n\t\t\tfont-weight: 600;\n\t\t\ttext-align: center;\n\t\t\tletter-spacing: 0.5rem;\n\t\t\ttransition: all 0.3s ease;\n\t\t\tbackground: rgba(255, 255, 255, 0.9);\n\t\t\tfont-family: \"Courier New\", monospace;\n\t\t}\n\n\t\t.totp-input:focus {\n\t\t\toutline: none;\n\t\t\tborder-color: #667eea;\n\t\t\tbox-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);\n\t\t\ttransform: translateY(-1px);\n\t\t}\n\n\t\t.totp-input:hover {\n\t\t\tborder-color: #c1c7d0;\n\t\t}\n\n\t\t.totp-input::placeholder {\n\t\t\tcolor: #999;\n\t\t\tletter-spacing: 0.3rem;\n\t\t}\n\n\t\t.verify-btn {\n\t\t\twidth: 100%;\n\t\t\tpadding: 0.9rem;\n\t\t\tbackground: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n\t\t\tcolor: #fff;\n\t\t\tborder: none;\n\t\t\tborder-radius: 12px;\n\t\t\tfont-size: 1rem;\n\t\t\tfont-weight: 600;\n\t\t\tcursor: pointer;\n\t\t\ttransition: all 0.3s ease;\n\t\t\tbox-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);\n\t\t\tmargin-top: 1rem;\n\t\t}\n\n\t\t.verify-btn:hover {\n\t\t\ttransform: translateY(-2px);\n\t\t\tbox-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);\n\t\t}\n\n\t\t.verify-btn:active {\n\t\t\ttransform: translateY(0);\n\t\t}\n\n\t\t.verify-btn:disabled {\n\t\t\topacity: 0.6;\n\t\t\tcursor: not-allowed;\n\t\t\ttransform: none;\n\t\t}\n\n\t\t.info-text {\n\t\t\ttext-align: center;\n\t\t\tcolor: #666;\n\t\t\tfont-size: 0.8rem;\n\t\t\tmargin-top: 1rem;\n\t\t\tline-height: 1.4;\n\t\t}\n\n\t\t.countdown {\n\t\t\ttext-align: center;\n\t\t\tmargin-top: 1rem;\n\t\t\tfont-size: 0.9rem;\n\t\t\tcolor: #666;\n\t\t}\n\n\t\t.countdown.warning {\n\t\t\tcolor: #ff6b6b;\n\t\t\tfont-weight: 600;\n\t\t}\n\n\t\t@media (max-width: 480px) {\n\t\t\t.totp-card {\n\t\t\t\tpadding: 2rem;\n\t\t\t\tmargin: 1rem;\n\t\t\t}\n\t\t\t.navbar h1 {\n\t\t\t\tfont-size: 1.5rem;\n\t\t\t}\n\t\t\t.totp-input {\n\t\t\t\tfont-size: 1.1rem;\n\t\t\t\tletter-spacing: 0.3rem;\n\t\t\t}\n\t\t}\n\t</style><form action=\"/login/validate-otp\" id=\"totpForm\" method=\"post\"><div class=\"form-group\"><label for=\"code\">Authentication Code</label> <input type=\"text\" id=\"otpCode\" name=\"otp_code\" class=\"totp-input\" required placeholder=\"00000000\" maxlength=\"8\" pattern=\"[0-9]{8}\" autocomplete=\"one-time-code\"></div><button type=\"submit\" class=\"verify-btn\" id=\"verifyBtn\">Verify Code</button></form><div class=\"link-below-form\"><a href=\"/login\">← Back to Login</a></div><script>\n\t\t// Auto-format TOTP input\n\t\tconst totpInput = document.getElementById(\"otpCode\");\n\t\tconst verifyBtn = document.getElementById(\"verifyBtn\");\n\t\tconst countdownElement = document.getElementById(\"countdown\");\n\t\tconst maxLength = 8;\n\n\t\t// Format input to only accept numbers\n\t\ttotpInput.addEventListener(\"input\", function (e) {\n\t\t\tlet value = e.target.value.replace(/[^0-9]/g, \"\");\n\t\t\tif (value.length > maxLength) {\n\t\t\t\tvalue = value.slice(0, maxLength);\n\t\t\t}\n\t\t\te.target.value = value;\n\n\t\t\t// Enable/disable verify button based on input length\n\t\t\tif (value.length === maxLength) {\n\t\t\t\tverifyBtn.disabled = false;\n\t\t\t} else {\n\t\t\t\tverifyBtn.disabled = true;\n\t\t\t}\n\t\t});\n\n\t\t// Auto-submit when \"max length\" digits are entered\n\t\ttotpInput.addEventListener(\"input\", function (e) {\n\t\t\tif (e.target.value.length === maxLength) {\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tdocument.getElementById(\"totpForm\").submit();\n\t\t\t\t}, 500);\n\t\t\t}\n\t\t});\n\n\t\t// Add subtle animations to form inputs\n\t\ttotpInput.addEventListener(\"focus\", function () {\n\t\t\tthis.parentElement.style.transform = \"translateY(-2px)\";\n\t\t});\n\n\t\ttotpInput.addEventListener(\"blur\", function () {\n\t\t\tthis.parentElement.style.transform = \"translateY(0)\";\n\t\t});\n\n\t\t// Initialize button state\n\t\tverifyBtn.disabled = true;\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<input type=\"hidden\" id=\"maxLength\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(totp.DefaultOTPDigits)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/validate_otp.templ`, Line: 21, Col: 66}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><style>\n\t\t.totp-input {\n\t\t\twidth: 100%;\n\t\t\tpadding: 1rem;\n\t\t\tborder: 2px solid #e1e5e9;\n\t\t\tborder-radius: 12px;\n\t\t\tfont-size: 1.2rem;\n\t\t\tfont-weight: 600;\n\t\t\ttext-align: center;\n\t\t\tletter-spacing: 0.5rem;\n\t\t\ttransition: all 0.3s ease;\n\t\t\tbackground: rgba(255, 255, 255, 0.9);\n\t\t\tfont-family: \"Courier New\", monospace;\n\t\t}\n\n\t\t.totp-input:focus {\n\t\t\toutline: none;\n\t\t\tborder-color: #667eea;\n\t\t\tbox-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);\n\t\t\ttransform: translateY(-1px);\n\t\t}\n\n\t\t.totp-input:hover {\n\t\t\tborder-color: #c1c7d0;\n\t\t}\n\n\t\t.totp-input::placeholder {\n\t\t\tcolor: #999;\n\t\t\tletter-spacing: 0.3rem;\n\t\t}\n\n\t\t.verify-btn {\n\t\t\twidth: 100%;\n\t\t\tpadding: 0.9rem;\n\t\t\tbackground: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n\t\t\tcolor: #fff;\n\t\t\tborder: none;\n\t\t\tborder-radius: 12px;\n\t\t\tfont-size: 1rem;\n\t\t\tfont-weight: 600;\n\t\t\tcursor: pointer;\n\t\t\ttransition: all 0.3s ease;\n\t\t\tbox-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);\n\t\t\tmargin-top: 1rem;\n\t\t}\n\n\t\t.verify-btn:hover {\n\t\t\ttransform: translateY(-2px);\n\t\t\tbox-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);\n\t\t}\n\n\t\t.verify-btn:active {\n\t\t\ttransform: translateY(0);\n\t\t}\n\n\t\t.verify-btn:disabled {\n\t\t\topacity: 0.6;\n\t\t\tcursor: not-allowed;\n\t\t\ttransform: none;\n\t\t}\n\n\t\t.info-text {\n\t\t\ttext-align: center;\n\t\t\tcolor: #666;\n\t\t\tfont-size: 0.8rem;\n\t\t\tmargin-top: 1rem;\n\t\t\tline-height: 1.4;\n\t\t}\n\n\t\t.countdown {\n\t\t\ttext-align: center;\n\t\t\tmargin-top: 1rem;\n\t\t\tfont-size: 0.9rem;\n\t\t\tcolor: #666;\n\t\t}\n\n\t\t.countdown.warning {\n\t\t\tcolor: #ff6b6b;\n\t\t\tfont-weight: 600;\n\t\t}\n\n\t\t@media (max-width: 480px) {\n\t\t\t.totp-card {\n\t\t\t\tpadding: 2rem;\n\t\t\t\tmargin: 1rem;\n\t\t\t}\n\t\t\t.navbar h1 {\n\t\t\t\tfont-size: 1.5rem;\n\t\t\t}\n\t\t\t.totp-input {\n\t\t\t\tfont-size: 1.1rem;\n\t\t\t\tletter-spacing: 0.3rem;\n\t\t\t}\n\t\t}\n\t</style><form action=\"/login/validate-otp\" id=\"totpForm\" method=\"post\"><div class=\"form-group\"><label for=\"code\">Authentication Code</label> <input type=\"text\" id=\"otpCode\" name=\"otp_code\" class=\"totp-input\" required placeholder=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(generatePlaceholder(totp.DefaultOTPDigits))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/validate_otp.templ`, Line: 120, Col: 135}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" maxlength=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(totp.DefaultOTPDigits)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/validate_otp.templ`, Line: 120, Col: 171}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" pattern=\"[0-9]{8}\" autocomplete=\"one-time-code\"></div><button type=\"submit\" class=\"verify-btn\" id=\"verifyBtn\">Verify Code</button></form><div class=\"link-below-form\"><a href=\"/login\">← Back to Login</a></div><script>\n\t\tconst maxLength = Number(document.querySelector(\"input#maxLength\").value);\n\t\tconst totpInput = document.getElementById(\"otpCode\");\n\t\tconst verifyBtn = document.getElementById(\"verifyBtn\");\n\t\tconst countdownElement = document.getElementById(\"countdown\");\n\n\t\t// Format input to only accept numbers\n\t\ttotpInput.addEventListener(\"input\", function (e) {\n\t\t\tlet value = e.target.value.replace(/[^0-9]/g, \"\");\n\t\t\tif (value.length > maxLength) {\n\t\t\t\tvalue = value.slice(0, maxLength);\n\t\t\t}\n\t\t\te.target.value = value;\n\n\t\t\t// Enable/disable verify button based on input length\n\t\t\tif (value.length === maxLength) {\n\t\t\t\tverifyBtn.disabled = false;\n\t\t\t} else {\n\t\t\t\tverifyBtn.disabled = true;\n\t\t\t}\n\t\t});\n\n\t\t// Auto-submit when \"max length\" digits are entered\n\t\ttotpInput.addEventListener(\"input\", function (e) {\n\t\t\tif (e.target.value.length === maxLength) {\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tdocument.getElementById(\"totpForm\").submit();\n\t\t\t\t}, 500);\n\t\t\t}\n\t\t});\n\n\t\t// Add subtle animations to form inputs\n\t\ttotpInput.addEventListener(\"focus\", function () {\n\t\t\tthis.parentElement.style.transform = \"translateY(-2px)\";\n\t\t});\n\n\t\ttotpInput.addEventListener(\"blur\", function () {\n\t\t\tthis.parentElement.style.transform = \"translateY(0)\";\n\t\t});\n\n\t\t// Initialize button state\n\t\tverifyBtn.disabled = true;\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
